@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ChatGateway } from './chat/chat.gateway';
 import { UsersModule } from './users/users.module';
+import { ApiModule } from './api/api.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { UsersModule } from './users/users.module';
       rootPath: join(__dirname, '..', 'public'),
     }),
     UsersModule,
+    ApiModule
   ],
   controllers: [AppController],
   providers: [AppService, ChatGateway],

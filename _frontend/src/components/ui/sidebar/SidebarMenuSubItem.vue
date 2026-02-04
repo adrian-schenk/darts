@@ -1,9 +1,9 @@
 <script setup lang="ts">
+
 </script>
 
 <template>
-  <router-view />
+  <li>
+    <slot />
+  </li>
 </template>
-
-<style scoped>
-</style>
