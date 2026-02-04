@@ -10,7 +10,7 @@ const route = useRoute()
 <template>
   <div class="flex h-screen bg-slate-950">
     <Navigation />
-    <main class="w-full ml-64 flex-1 overflow-auto">
+    <main class="w-full flex-1 overflow-auto">
       <router-view :key="route.path" />
     </main>
   </div>
