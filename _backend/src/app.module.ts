@@ -3,9 +3,10 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ChatGateway } from './chat/chat.gateway';
+import { DartSocket } from './chat/chat.gateway';
 import { UsersModule } from './users/users.module';
 import { ApiModule } from './api/api.module';
+import ChatService from './chat/chat.service';
 
 @Module({
   imports: [
@@ -16,6 +17,6 @@ import { ApiModule } from './api/api.module';
     ApiModule
   ],
   controllers: [AppController],
-  providers: [AppService, ChatGateway],
+  providers: [AppService, DartSocket, ChatService],
 })
 export class AppModule {}

@@ -8,22 +8,30 @@
 </head>
 <body class="bg-gray-100">
   <div class="container mx-auto p-4">
-    <h1 class="text-3xl font-bold text-center mb-4">Welcome to NestJS with Tailwind</h1>
     <div id="messages" class="bg-white p-4 rounded shadow"></div>
     <input id="messageInput" type="text" class="border p-2 w-full mt-4" placeholder="Type a message">
     <button id="sendButton" class="bg-blue-500 text-white p-2 mt-2 rounded">Send</button>
   </div>
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    const socket = io();
+    const socket = io({
+      auth: {
+        token: 'your-auth-token-here'
+      }
+    });
     const messages = document.getElementById('messages');
     const messageInput = document.getElementById('messageInput');
     const sendButton = document.getElementById('sendButton');
 
     socket.on('message', (msg) => {
+      console.log('Received message:', msg);
       const p = document.createElement('p');
-      p.textContent = msg;
+      p.textContent = JSON.stringify(msg);
       messages.appendChild(p);
+    });
+
+    socket.on('error', (err) => {
+      alert(`Error: ${err.message}`);
     });
 
     sendButton.addEventListener('click', () => {
