@@ -3,10 +3,10 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { DartSocket } from './chat/chat.gateway';
+import { DartSocket } from './ws/ws.gateway';
 import { UsersModule } from './users/users.module';
 import { ApiModule } from './api/api.module';
-import ChatService from './chat/chat.service';
+import ChatService from './ws/ws.service';
 
 @Module({
   imports: [
