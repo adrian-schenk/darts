@@ -12,7 +12,10 @@ export default function useSocket() {
   const cookies = useCookies(["auth_token"]);
   const token = cookies.get("auth_token");
 
-  if (!token) return false;
+  if (!token) {
+    console.log("No auth token found, skipping socket connection.");
+    return false;
+  }
 
   if (!socket) {
     socket = io(`http://localhost:${import.meta.env.VITE_BACKEND_PORT}`, {
@@ -24,7 +27,6 @@ export default function useSocket() {
 
     socket.on("connect", () => {
         status.value = "connected";
-        console.log("socket connected");
     });
 
     socket.on("disconnect", () => {
