@@ -6,7 +6,7 @@ import { AppService } from './app.service';
 import { DartSocket } from './ws/ws.gateway';
 import { UsersModule } from './users/users.module';
 import { ApiModule } from './api/api.module';
-import ChatService from './ws/ws.service';
+import DartSocketService from './ws/ws.service';
 
 @Module({
   imports: [
@@ -17,6 +17,6 @@ import ChatService from './ws/ws.service';
     ApiModule
   ],
   controllers: [AppController],
-  providers: [AppService, DartSocket, ChatService],
+  providers: [AppService, DartSocket, DartSocketService],
 })
 export class AppModule {}
