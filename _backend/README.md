@@ -25,6 +25,64 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+## API Endpoints
+
+### Checkout API
+
+**GET** `/api/checkouts/:score`
+
+Returns all possible dart checkout combinations for a given score.
+
+**Path Parameters:**
+- `score` (number, required): The score to check out (1-180)
+
+**Query Parameters:**
+- `throwsLeft` (number, optional): Number of throws available (1-3, default: 3)
+- `doubleOut` (boolean, optional): Whether finish must be on a double (default: true)
+
+**Example Requests:**
+```bash
+# Get all checkouts for score 40 with default settings (3 throws, double out)
+GET /api/checkouts/40
+
+# Get checkouts for score 100 with only 2 throws left
+GET /api/checkouts/100?throwsLeft=2
+
+# Get checkouts for score 60 without requiring double out
+GET /api/checkouts/60?doubleOut=false
+
+# Combination of parameters
+GET /api/checkouts/50?throwsLeft=1&doubleOut=true
+```
+
+**Response Format:**
+```json
+{
+  "score": 40,
+  "throwsLeft": 3,
+  "doubleOut": true,
+  "checkouts": [
+    {
+      "darts": [
+        {
+          "value": 20,
+          "multiplier": 2,
+          "display": "D20",
+          "isDouble": true
+        }
+      ],
+      "total": 40
+    }
+  ]
+}
+```
+
+**Dart Display Format:**
+- `S{n}` - Single (e.g., S20)
+- `D{n}` - Double (e.g., D20)
+- `T{n}` - Triple (e.g., T20)
+- `Miss` - Missed dart (0 points)
+
 ## Project setup
 
 ```bash
