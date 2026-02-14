@@ -33,6 +33,12 @@ export default defineConfigWithVueTs(
     ...pluginVitest.configs.recommended,
     files: ['src/**/__tests__/*'],
   },
-
+  {
+    rules: {
+      'vue/block-lang': 'off',
+      'vue/script-lang': 'off',
+      'vue/multi-word-component-names': 'off'
+    },
+  },
   skipFormatting,
 )
