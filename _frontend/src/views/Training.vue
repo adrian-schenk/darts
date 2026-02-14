@@ -14,7 +14,8 @@
 			<div class="flex flex-row items-center gap-2 rounded-xl bg-[#1a1a1a]">
 				<div class="flex flex-col justify-center items-center text-7xl h-full w-4/10 p-4 font-bold"
 					:class="curTargetHit ? 'text-green-400' : ''">{{ getFieldName(curTarget) }}
-					<div v-if="totalThrows > 0" class="flex flex-row justify-center items-center p-1 text-gray-400 mt-2">
+					<div v-if="totalThrows > 0"
+						class="flex flex-row justify-center items-center p-1 text-gray-400 mt-2">
 						<div class="text-sm text-center text-gray-400 mt-2">{{ curThrows }} Throws
 						</div>
 						<div class="h-8 border-l border-gray-600 mx-4"></div>
@@ -29,10 +30,11 @@
 				<Dartboard ref="DartboardRef" class="w-full" :click-to-add-marker="true"></Dartboard>
 			</div>
 		</div>
-		<div v-if="props.mode == 'checkouts'" class="max-w-3xl mx-auto">
-			<h2 class="text-2xl font-semibold mb-4">Checkouts Practice</h2>
-			<p class="mb-4">Practice finishing combinations.</p>
-			<Dartboard ref="DartboardRef"></Dartboard>
+		<div v-if="props.mode == 'checkouts'" class="mx-auto">
+			<div class="flex flex-row gap-4 w-full h-full">
+				<Player ref="PlayerRef" class="flex-auto h-auto w-full" :show-name="false" :show-sets="false" :show-avg="false" :show-history="false" :dart-board-ref="DartboardRef"></Player>
+				<Dartboard ref="DartboardRef" class="flex-auto w-full" :click-to-add-marker="true"></Dartboard>
+			</div>
 		</div>
 
 		<router-view />
@@ -41,12 +43,14 @@
 
 <script setup lang="ts">
 import Dartboard from '@/components/Dartboard.vue';
+import Player from '@/components/Player.vue';
 import Separator from '@/components/ui/separator/Separator.vue';
 import useSocket from '@/lib/socket';
 import { onMounted, ref, watch } from 'vue';
 
 let { socket, status, data, send, close } = useSocket();
 
+const PlayerRef = ref(Player);
 const DartboardRef = ref(Dartboard);
 const props = defineProps<{ mode?: string }>()
 
@@ -64,6 +68,7 @@ const totalThrows = ref<number>(0)
 const totalHits = ref<number>(0)
 
 const getFieldName = (id: String) => {
+  if (id === 'miss') return 'Miss'
 	if (id === 'outer-bull') return 'SB'
 	if (id === 'bullseye') return 'Bull'
 	const [type, num] = id.split('-')
@@ -84,21 +89,33 @@ const getNextTarget = () => {
 watch(data, (newData) => {
 	if (newData.type === 'dart_hit') {
 		const { x, y } = newData.data
-		DartboardRef.value.addHitMarker(x, y)
-		newData.data.segment = newData.data.segment.replace(/-inner|-outer/, '')
-		if (newData.data.segment == curTarget.value) {
-			curTargetHit.value = true
-			totalHits.value++
-			setTimeout(() => {
-				DartboardRef.value.clearMarkers()
-				curTarget.value = getNextTarget()
-				curThrows.value = 0
-				curTargetHit.value = false
-			}, 1500);
-		} else {
-			curThrows.value++
-		}
-		totalThrows.value++
+
+    if (props.mode == 'checkouts') {
+      newData.data.segment = newData.data.segment.replace(/-inner|-outer/, '')
+      PlayerRef.value.PlayerInterface.addThrow({
+        field: getFieldName(newData.data.segment),
+        score: DartboardRef.value.getSegmentInfo(newData.data.segment).score,
+        x: newData.data.x,
+        y: newData.data.y
+      });
+    }
+    if (props.mode == 'target') {
+      if (Dartboard) DartboardRef.value.addHitMarker(x, y)
+      newData.data.segment = newData.data.segment.replace(/-inner|-outer/, '')
+      if (curTarget.value && newData.data.segment == curTarget.value) {
+        curTargetHit.value = true
+        totalHits.value++
+        setTimeout(() => {
+          if (Dartboard) DartboardRef.value.clearMarkers()
+          curTarget.value = getNextTarget()
+          curThrows.value = 0
+          curTargetHit.value = false
+        }, 1500);
+      } else {
+        curThrows.value++
+      }
+      totalThrows.value++
+    }
 	}
 })
 

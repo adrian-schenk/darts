@@ -98,7 +98,7 @@ let { socket, status, data, send, close } = useSocket()
 
 const props = defineProps({
   clickToAddMarker: { type: Boolean, default: false },
-  showScore: { type: Boolean, default: true }
+  showScore: { type: Boolean, default: true },
 })
 
 const svgRef = ref<SVGSVGElement | null>(null)
@@ -121,7 +121,7 @@ const handleBoardClick = (event: MouseEvent) => {
   const finalY = (mouseY * scale) - 250
 
   //console.log(`Hit at: x=${finalX.toFixed(2)}, y=${finalY.toFixed(2)}`)
-  socket.emit('message', { type: 'dart_hit', data: { x: finalX, y: finalY, segment: activeSegment.value } })
+  send('message', { type: 'dart_hit', data: { x: finalX, y: finalY, segment: activeSegment.value ?? 'miss'} })
 }
 
 const addHitMarker = (x: number, y: number) => {
@@ -142,8 +142,6 @@ const getAllFields = () => {
   fields.push('outer-bull', 'bullseye')
   return fields
 }
-
-defineExpose({ addHitMarker, clearMarkers, getAllFields })
 
 // --- LOGIC & MATH ---
 const dartboardNumbers = [20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5]
@@ -176,6 +174,7 @@ const getSegmentFill = (i: number) => (i % 2 === 0 ? 'url(#grad-black)' : 'url(#
 const getDoubleFill = (i: number) => (i % 2 === 0 ? 'url(#grad-red)' : 'url(#grad-green)')
 
 const getSegmentInfo = (s: string) => {
+  if (s === 'miss') return { name: 'MISS', score: 0 }
   if (s === 'bullseye') return { name: 'BULLSEYE', score: 50 }
   if (s === 'outer-bull') return { name: 'OUTER BULL', score: 25 }
   const match = s.match(/-(\d+)/)
@@ -184,6 +183,9 @@ const getSegmentInfo = (s: string) => {
   const mult = s.includes('double') ? 2 : s.includes('triple') ? 3 : 1
   return { name: `${s.includes('double') ? 'DOUBLE' : s.includes('triple') ? 'TRIPLE' : 'SINGLE'} ${num}`, score: num * mult }
 }
+
+defineExpose({ addHitMarker, clearMarkers, getAllFields, getSegmentInfo })
+
 </script>
 
 <style scoped>

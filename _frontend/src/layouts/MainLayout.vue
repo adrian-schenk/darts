@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
 import Navigation from '@/components/Navigation.vue'
-import router from '@/router';
+
+import useSocket from "@/lib/socket.ts";
 
 const route = useRoute()
+
+useSocket()
 
 </script>
 
