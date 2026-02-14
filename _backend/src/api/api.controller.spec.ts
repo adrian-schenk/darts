@@ -55,6 +55,10 @@ describe('ApiController', () => {
       expect(() => controller.getCheckouts(-1)).toThrow(HttpException);
     });
 
+    it('should throw exception for score 0', () => {
+      expect(() => controller.getCheckouts(0)).toThrow(HttpException);
+    });
+
     it('should throw exception for throwsLeft less than 1', () => {
       expect(() => controller.getCheckouts(40, '0')).toThrow(HttpException);
     });

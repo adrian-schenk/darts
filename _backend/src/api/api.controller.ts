@@ -21,9 +21,9 @@ export class ApiController {
     const parsedDoubleOut = doubleOut === 'false' ? false : true; // Default to true
 
     // Validate parameters
-    if (score < 0 || score > 180) {
+    if (score <= 0 || score > 180) {
       throw new HttpException(
-        'Score must be between 0 and 180',
+        'Score must be between 1 and 180',
         HttpStatus.BAD_REQUEST,
       );
     }

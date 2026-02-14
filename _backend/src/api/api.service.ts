@@ -149,7 +149,7 @@ export class ApiService {
             [...currentDarts, dart],
             results,
           );
-        } else if (throwsLeft > 1) {
+        } else {
           // Not finishing yet, continue
           this.findCheckoutsRecursive(
             remainingScore - dartTotal,
