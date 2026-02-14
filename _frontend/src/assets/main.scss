@@ -1,6 +1,6 @@
-@import "tailwindcss";
-@import './base.scss';
-@import './style.scss';
+@use "tailwindcss";
+@use './base.scss';
+@use './style.scss';
 
 @custom-variant dark (&:is(.dark *));
 

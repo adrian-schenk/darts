@@ -1,54 +1,66 @@
-import { io } from "socket.io-client";
-import { useCookies } from "@vueuse/integrations/useCookies.js";
 import { ref, onUnmounted } from "vue";
+import { io } from "socket.io-client";
+import { useCookies } from "@vueuse/integrations/useCookies";
 
-let socket: any;
-
+let socket: any = null;
 const status = ref("disconnected");
-const data = ref(null);
-
+const data = ref<any>(null);
+let users = 0;
 
 export default function useSocket() {
   const cookies = useCookies(["auth_token"]);
   const token = cookies.get("auth_token");
 
   if (!token) {
-    console.log("No auth token found, skipping socket connection.");
-    return false;
+    console.warn("No auth token found, skipping socket connection.");
+    return {
+      socket: null,
+      status,
+      data,
+      send: () => {},
+      close: () => {},
+    };
   }
 
   if (!socket) {
     socket = io(`http://localhost:${import.meta.env.VITE_BACKEND_PORT}`, {
-        auth: {
-        'token': token,
-        },
-        transports: ["websocket"],
+      auth: { token },
+      transports: ["websocket"],
     });
 
     socket.on("connect", () => {
-        status.value = "connected";
+      status.value = "connected";
     });
 
     socket.on("disconnect", () => {
-        status.value = "disconnected";
+      status.value = "disconnected";
     });
 
     socket.on("message", (msg: any) => {
-        console.log('recv', msg);
-        data.value = msg;
+      console.log("recv", msg);
+      data.value = msg;
     });
-}
+  }
 
-  function send(event: String, payload: any) {
+  users++;
+
+  function send(event: string, payload: any) {
+    if (!socket) return;
     socket.emit(event, payload);
   }
 
   function close() {
+    if (!socket) return;
     socket.disconnect();
+    socket = null;
   }
 
   onUnmounted(() => {
-    socket?.disconnect();
+    users--;
+    if (users <= 0 && socket) {
+      socket.disconnect();
+      socket = null;
+    }
   });
 
   return {
