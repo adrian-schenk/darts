@@ -44,7 +44,7 @@ export default function useSocket() {
 
   users++;
 
-  function send(event: string, payload: any) {
+  function send<TPayload = unknown>(event: string, payload: TPayload) {
     if (!socket) return;
     socket.emit(event, payload);
   }
