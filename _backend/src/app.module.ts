@@ -7,6 +7,7 @@ import { DartSocket } from './ws/ws.gateway';
 import { UsersModule } from './users/users.module';
 import { ApiModule } from './api/api.module';
 import DartSocketService from './ws/ws.service';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -14,7 +15,8 @@ import DartSocketService from './ws/ws.service';
       rootPath: join(__dirname, '..', 'public'),
     }),
     UsersModule,
-    ApiModule
+    ApiModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService, DartSocket, DartSocketService],

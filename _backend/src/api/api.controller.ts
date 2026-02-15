@@ -1,10 +1,14 @@
-import { Controller, Get, Param, Query, ParseIntPipe, HttpException, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Param, Query, ParseIntPipe, HttpException, HttpStatus, UseGuards } from '@nestjs/common';
 import { ApiService, Checkout } from './api.service';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { Public } from 'src/auth/public.decorator';
 
+@UseGuards(JwtAuthGuard)
 @Controller('api')
 export class ApiController {
   constructor(private readonly apiService: ApiService) {}
 
+  @Public()
   @Get('/test')
   findAll(): string {
     return 'This action returns all cats';
