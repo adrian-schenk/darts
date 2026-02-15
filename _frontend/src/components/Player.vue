@@ -1,5 +1,6 @@
 <template>
   <div class="relative p-6 flex flex-col justify-center items-center rounded-lg bg-gray-800">
+    <slot />
     <div v-if="showName" class="text-4xl text-white font-bold">Player name</div>
     <div v-if="showSets" class="flex justify-center items-center mt-4 text-gray-400">
       <div class="m-4">0 sets</div>
@@ -31,7 +32,7 @@
         </div>
       </template>
       <template v-else>
-        <div class="w-full w-32 h-24 rounded-md flex flex-col items-center justify-center"><p class="text-yellow-500 font-bold">Remove darts</p></div>
+        <div class="w-32 h-24 rounded-md flex flex-col items-center justify-center"><p class="text-yellow-500 font-bold">Remove darts</p></div>
       </template>
     </div>
     <div v-if="showHistory"
@@ -69,33 +70,27 @@
 </template>
 
 <script setup lang="ts">
-import {ref} from "vue";
-import type {Throw} from '@/lib/dart.js'
+import { watch } from "vue";
 import {DartPlayer, PlayerState} from "@/lib/dartPlayer.ts";
-import Player from "./Player.vue";
-import Dartboard from "@/components/Dartboard.vue";
 
-const {
-  showName = true,
-  showSets = true,
-  showAvg = true,
-  showHistory = true,
-  initialScore = 501,
-  dartBoardRef = null
-} = defineProps({
-  showName: Boolean,
-  showSets: Boolean,
-  showAvg: Boolean,
-  showHistory: Boolean,
-  initialScore: Number,
-  dartBoardRef: Dartboard
+const props = defineProps({
+  showName: { type: Boolean, default: true },
+  showSets: { type: Boolean, default: true },
+  showAvg: { type: Boolean, default: true },
+  showHistory: { type: Boolean, default: true },
+  initialScore: { type: Number, default: 501 },
+  dartBoardRef: { type: Object, default: null }
 })
 
 const PlayerInterface = new DartPlayer({
   name: '',
-  initialScore: 501,
-  dartboardRef: dartBoardRef
+  initialScore: props.initialScore,
+  dartboardRef: props.dartBoardRef
 });
+
+watch(() => props.dartBoardRef, (dartBoardRef) => {
+  PlayerInterface.boardRef = dartBoardRef
+}, { immediate: true })
 
 defineExpose({
   PlayerInterface

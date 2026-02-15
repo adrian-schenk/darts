@@ -1,7 +1,5 @@
 import {ref} from "vue";
 import type {Throw} from "@/lib/dart.ts";
-import Player from "@/components/Player.vue";
-import Dartboard from "@/components/Dartboard.vue";
 
 export enum CountingMode {
   SUBTRACT,
@@ -19,7 +17,15 @@ export interface DartPlayerInfo {
   initialScore: number,
   countingMode?: CountingMode,
   throwsPerTurn?: number,
-  dartboardRef?: typeof Dartboard
+  dartboardRef?: {
+    addHitMarker?: (x: number, y: number) => void,
+    clearMarkers?: () => void
+  } | {
+    value?: {
+      addHitMarker?: (x: number, y: number) => void,
+      clearMarkers?: () => void
+    }
+  }
 }
 
 export class DartPlayer {
@@ -76,7 +82,13 @@ export class DartPlayer {
       this.throws.value[idx] = t;
     }
 
-    if (this.boardRef) this.boardRef.addHitMarker(t.x, t.y);
+    const board = this.boardRef && typeof this.boardRef === 'object' && 'value' in this.boardRef
+      ? this.boardRef.value
+      : this.boardRef
+
+    if (board && typeof board.addHitMarker === 'function' && typeof t.x === 'number' && typeof t.y === 'number') {
+      board.addHitMarker(t.x, t.y)
+    }
     this.modifyScore(t)
 
     if (this.numThrows.value >= this.throwsPerTurn.value) {
