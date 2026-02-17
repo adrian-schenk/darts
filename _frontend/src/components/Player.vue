@@ -9,7 +9,6 @@
     </div>
     <div class="text-8xl text-white my-4 font-bold">{{ PlayerInterface.score }}</div>
     <div class="flex justify-center items-center gap-2 mt-4 text-gray-400">
-      <template v-if="PlayerInterface.state.value != PlayerState.REMOVE_DARTS">
         <div
           v-for="(t, i) in PlayerInterface.throws.value"
           :key="i"
@@ -30,9 +29,8 @@
             </div>
           </template>
         </div>
-      </template>
-      <template v-else>
-        <div class="w-32 h-24 rounded-md flex flex-col items-center justify-center"><p class="text-yellow-500 font-bold">Remove darts</p></div>
+      <template v-if="PlayerInterface.state.value === PlayerState.REMOVE_DARTS">
+        <div class="absolute bg-slate-700/80 top-1/2 -translate-y-1/2 w-full h-24 flex flex-col items-center justify-center"><p class="text-yellow-500 font-bold">Remove darts</p></div>
       </template>
     </div>
     <div v-if="showHistory"
