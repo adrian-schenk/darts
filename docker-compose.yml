@@ -4,9 +4,9 @@ services:
     container_name: darts-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-darts}
-      POSTGRES_USER: ${POSTGRES_USER:-darts}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-darts}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - '${POSTGRES_PORT:-5432}:5432'
     volumes:
