@@ -8,7 +8,7 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
 export default defineConfig(({ command, mode }) => {
-  const env = loadEnv(mode, '../', '')
+  const env = loadEnv(mode, './', '')
   
   return {
     plugins: [
@@ -22,6 +22,7 @@ export default defineConfig(({ command, mode }) => {
       },
     },
     define: {
+      'import.meta.env.VITE_BACKEND_URL': JSON.stringify(env.BACKEND_URL),
       'import.meta.env.VITE_BACKEND_PORT': JSON.stringify(env.BACKEND_PORT),
     },
   }

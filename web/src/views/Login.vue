@@ -79,6 +79,7 @@
 </template>
 
 <script setup lang="ts">
+import Cookies from 'js-cookie'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { RouterLink } from 'vue-router'
@@ -91,15 +92,27 @@ const form = ref({
   rememberMe: false
 })
 
-const handleLogin = async () => {
-  try {
-    // TODO: Add actual login logic here
-    console.log('Login attempt:', form.value)
-    
-    // For now, just redirect to dashboard
-    await router.push('/home')
-  } catch (error) {
-    console.error('Login failed:', error)
-  }
+const handleLogin = () => {
+  fetch(`http://${import.meta.env.VITE_BACKEND_URL}:${import.meta.env.VITE_BACKEND_PORT}/auth/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(form.value)
+  })
+    .then(res => {
+      if (!res.ok) {
+        throw new Error('Login failed');
+      }
+
+      return res.json();
+    })
+    .then(token => {
+      Cookies.set('auth_token', token.access_token, { expires: form.value.rememberMe ? 7 : undefined, secure: true, sameSite: 'strict' });
+      router.push('/');
+    })
+    .catch(error => {
+      console.error('Login failed:', error);
+    });
 }
 </script>
