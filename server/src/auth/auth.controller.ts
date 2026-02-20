@@ -31,14 +31,6 @@ export class AuthController {
     return this.authService.login(loginDto);
   }
 
-  @Get('testlogin')
-  testLogin(): any {
-    return this.authService.login({
-      username: 'test',
-      password: 'dummy-password',
-    });
-  }
-
   @UseGuards(JwtAuthGuard)
   @Get('me')
   me(@Req() request: AuthenticatedRequest): Promise<{ id: string; username: string; email: string }> {
