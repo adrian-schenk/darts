@@ -1,53 +1,47 @@
 import { Injectable } from '@nestjs/common';
-import { randomUUID } from 'crypto';
-
-export interface UserRecord {
-  id: string;
-  username: string;
-  email: string;
-  passwordHash: string;
-}
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from './user.entity';
 
 @Injectable()
 export class UsersService {
-  private readonly users: UserRecord[] = [{
-    username: 'test',
-    email: 'test',
-    id: randomUUID(),
-    passwordHash: '229ac95aa0d712b66ba4b3258e91022d:ee03ae538929ae30bb2447041c15a48e2c52f7adeb892d1845da0340ccff0e71d33a4b30cae75ac7458e13dd6c1fd3c77b85d5ae02b0bf5d2b5fc9e463f37621', // 'dummy-password'
-  }];
+  constructor(
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+  ) {}
 
-  create(username: string, email: string, passwordHash: string): UserRecord {
-    const user: UserRecord = {
-      id: randomUUID(),
-      username,
-      email,
-      passwordHash,
-    };
-
-    this.users.push(user);
+  async create(username: string, email: string, passwordHash: string): Promise<User> {
+    const user = this.userRepository.create({ username, email, password: passwordHash, uuid: this.generateUuid() });
+    return this.userRepository.save(user);
+  }
+  async findByIdentifier(identifier: string): Promise<User | null> {
+    let user = await this.findByUsername(identifier);
+    if (!user) {
+      user = await this.findByEmail(identifier);
+    }
     return user;
   }
 
-  findByUsername(username: string): UserRecord | undefined {
-    return this.users.find((user) => user.username === username);
+  async findAll(): Promise<User[]> {
+    return this.userRepository.find();
   }
 
-  findByEmail(email: string): UserRecord | undefined {
-    const normalizedEmail = email.toLowerCase();
-    return this.users.find(
-      (user) => user.email.toLowerCase() === normalizedEmail,
-    );
+  async findByUsername(username: string): Promise<User | null> {
+    return this.userRepository.findOneBy({ username });
   }
 
-  findByIdentifier(identifier: string): UserRecord | undefined {
-    return (
-      this.findByUsername(identifier) ??
-      this.findByEmail(identifier)
-    );
+  async findByEmail(email: string): Promise<User | null> {
+    return this.userRepository.findOneBy({ email });
   }
 
-  findById(id: string): UserRecord | undefined {
-    return this.users.find((user) => user.id === id);
+  async findById(id: number): Promise<User | null> {
+    return this.userRepository.findOneBy({ id });
+  }
+
+  private generateUuid(): string {
+    return require('uuid').v4();
   }
 }
+
+export type { User };
+

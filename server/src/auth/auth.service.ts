@@ -8,82 +8,88 @@ import { randomBytes, scryptSync, timingSafeEqual } from 'crypto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { JwtPayload } from './types/jwt-payload.type';
-import { UserRecord, UsersService } from '../users/users.service';
+import { User, UsersService } from '../users/users.service';
+import { Token } from './token.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
+    @InjectRepository(Token)
+    private readonly tokenRepository: Repository<Token>,
   ) {}
 
-  async register(registerDto: RegisterDto): Promise<{ access_token: string }> {
+  async register(registerDto: RegisterDto): Promise<boolean> {
     const username = registerDto.username?.trim();
     const email = registerDto.email?.trim().toLowerCase();
     const password = registerDto.password;
-
+    
     if (!username || !email || !password) {
       throw new BadRequestException('username, email and password are required');
     }
 
-    if (this.usersService.findByUsername(username)) {
+    if (await this.usersService.findByUsername(username)) {
       throw new BadRequestException('username already exists');
     }
-
-    if (this.usersService.findByEmail(email)) {
+    if (await this.usersService.findByEmail(email)) {
       throw new BadRequestException('email already exists');
     }
-
-    const passwordHash = this.hashPassword(password);
-    const createdUser = this.usersService.create(username, email, passwordHash);
-
-    return this.issueToken(createdUser);
+    const passwordHash = AuthService.hashPassword(password);
+    const createdUser = await this.usersService.create(username, email, passwordHash);
+    return createdUser ? true : false;
   }
 
   async login(loginDto: LoginDto): Promise<{ access_token: string }> {
-    const identifier = loginDto.identifier?.trim();
+    const username = loginDto.username?.trim();
     const password = loginDto.password;
 
-    if (!identifier || !password) {
-      throw new BadRequestException('identifier and password are required');
+    if (!username || !password) {
+      throw new BadRequestException('username and password are required');
     }
 
-    const user = this.usersService.findByIdentifier(identifier);
-
-    if (!user || !this.verifyPassword(password, user.passwordHash)) {
+    const user = await this.usersService.findByUsername(username);
+    if (!user || !this.verifyPassword(password, user.password)) {
       throw new UnauthorizedException('invalid credentials');
     }
 
-    return this.issueToken(user);
+    // Create and store token entity
+    const tokenString = randomBytes(32).toString('hex');
+    const token = this.tokenRepository.create({
+      userId: user.id,
+      token: tokenString,
+    });
+    const savedToken = await this.tokenRepository.save(token);
+    return this.issueToken(user, savedToken.id);
   }
 
-  getProfile(userId: string): { id: string; username: string; email: string } {
-    const user = this.usersService.findById(userId);
-
+  async getProfile(userId: string): Promise<{ id: string; username: string; email: string }> {
+    const user = await this.usersService.findById(Number(userId));
     if (!user) {
       throw new UnauthorizedException('user not found');
     }
-
     return {
-      id: user.id,
+      id: user.id.toString(),
       username: user.username,
       email: user.email,
     };
   }
 
-  private issueToken(user: UserRecord): { access_token: string } {
+  private issueToken(user: User, tokenId: number): { access_token: string } {
     const payload: JwtPayload = {
-      uid: user.id,
+      tokenId: tokenId,
+      uid: user.id.toString(),
       username: user.username,
       email: user.email,
     };
-
     return {
       access_token: this.jwtService.sign(payload),
     };
   }
 
-  public hashPassword(password: string): string {
+  public static hashPassword(password: string): string {
     const salt = randomBytes(16).toString('hex');
     const hash = scryptSync(password, salt, 64).toString('hex');
     return `${salt}:${hash}`;

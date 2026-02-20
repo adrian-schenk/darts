@@ -22,7 +22,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  register(@Body() registerDto: RegisterDto): Promise<{ access_token: string }> {
+  register(@Body() registerDto: RegisterDto): Promise<boolean> {
     return this.authService.register(registerDto);
   }
 
@@ -34,14 +34,14 @@ export class AuthController {
   @Get('testlogin')
   testLogin(): any {
     return this.authService.login({
-      identifier: 'test',
+      username: 'test',
       password: 'dummy-password',
     });
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  me(@Req() request: AuthenticatedRequest): { id: string; username: string; email: string } {
+  me(@Req() request: AuthenticatedRequest): Promise<{ id: string; username: string; email: string }> {
     return this.authService.getProfile(request.user.uid);
   }
 }

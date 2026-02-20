@@ -5,6 +5,8 @@ import { UsersModule } from '../users/users.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Token } from './token.entity';
 
 @Module({
   imports: [
@@ -14,6 +16,7 @@ import { JwtStrategy } from './jwt.strategy';
       secret: process.env.JWT_SECRET ?? 'dev-only-secret-change-me',
       signOptions: { expiresIn: '24h' },
     }),
+    TypeOrmModule.forFeature([Token]),
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],
