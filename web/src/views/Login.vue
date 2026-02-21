@@ -109,7 +109,7 @@ const handleLogin = () => {
     })
     .then(token => {
       Cookies.set('auth_token', token.access_token, { expires: form.value.rememberMe ? 7 : undefined, secure: true, sameSite: 'strict' });
-      router.push('/');
+      window.location.href = '/';
     })
     .catch(error => {
       console.error('Login failed:', error);
