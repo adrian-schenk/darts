@@ -1,10 +1,10 @@
-import { ref, onUnmounted } from "vue";
+import { ref, onUnmounted, reactive } from "vue";
 import { io } from "socket.io-client";
 import { useCookies } from "@vueuse/integrations/useCookies";
 
 let socket: any = null;
 const status = ref("disconnected");
-const data = ref<any>(null);
+const data = reactive<any>({});
 let users = 0;
 
 export default function useSocket() {
@@ -39,9 +39,11 @@ export default function useSocket() {
       status.value = "disconnected";
     });
 
-    socket.on("message", (msg: any) => {
-      console.log("recv", msg);
-      data.value = msg;
+    socket.onAny((event: any, ...args: any[]) => {
+      if (!args[0].type) return;
+      console.log(`Received event: ${event}`, args[0]);
+      if (!data[event]) data[event] = {};
+      data[event][args[0].type] = args[0];
     });
   }
 

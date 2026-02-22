@@ -24,6 +24,7 @@ export default defineConfig(({ command, mode }) => {
     define: {
       'import.meta.env.VITE_BACKEND_URL': JSON.stringify(env.BACKEND_URL),
       'import.meta.env.VITE_BACKEND_PORT': JSON.stringify(env.BACKEND_PORT),
+      'import.meta.env.VITE_API_BASE_URL': JSON.stringify(env.API_BASE_URL),
     },
   }
 })

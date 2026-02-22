@@ -1,5 +1,5 @@
 <template>
-  <div class="dartboard-wrapper">
+  <div class="dartboard-wrapper relative overflow-hidden">
     <div class="dartboard-container">
       <svg ref="svgRef" viewBox="0 0 500 500" class="dartboard-svg" @click="handleBoardClick">
         <defs>
@@ -87,10 +87,14 @@
         <div class="score-main">{{ getSegmentInfo(activeSegment).score }}</div>
       </div>
     </div>
+    <div v-if="PlayerInterface?.state.value == PlayerState.REMOVE_DARTS" class="absolute bg-slate-700/80 w-full h-full flex flex-col items-center justify-center top-0 left-0">
+        <button @click="PlayerInterface && (PlayerInterface.endTurn())" class="text-2xl cursor-pointer border-2 rounded-full px-3 py-1 border-yellow-600 text-white font-bold hover:bg-yellow-600">Removed darts</button>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { DartPlayer, PlayerState } from '@/lib/dartPlayer'
 import useSocket from '@/lib/socket'
 import { ref, watch } from 'vue'
 
@@ -99,6 +103,8 @@ let { socket, status, data, send, close } = useSocket()
 const props = defineProps({
   clickToAddMarker: { type: Boolean, default: false },
   showScore: { type: Boolean, default: true },
+  manualInput: { type: Boolean, default: true },
+  PlayerInterface: { type: DartPlayer, default: null },
 })
 
 const svgRef = ref<SVGSVGElement | null>(null)
@@ -121,7 +127,7 @@ const handleBoardClick = (event: MouseEvent) => {
   const finalY = (mouseY * scale) - 250
 
   //console.log(`Hit at: x=${finalX.toFixed(2)}, y=${finalY.toFixed(2)}`)
-  send('message', { type: 'dart_hit', data: { x: finalX, y: finalY, segment: activeSegment.value ?? 'miss'} })
+  send('dart_event', { type: 'dart_hit', data: { x: finalX, y: finalY, segment: activeSegment.value ?? 'miss'} })
 }
 
 const addHitMarker = (x: number, y: number) => {

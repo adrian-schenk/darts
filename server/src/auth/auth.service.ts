@@ -55,7 +55,6 @@ export class AuthService {
       throw new UnauthorizedException('invalid credentials');
     }
 
-    // Create and store token entity
     const tokenString = randomBytes(32).toString('hex');
     const token = this.tokenRepository.create({
       userId: user.id,

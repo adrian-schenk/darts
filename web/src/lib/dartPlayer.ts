@@ -49,6 +49,7 @@ export class DartPlayer {
 
   countingMode: CountingMode
   throwsPerTurn = ref(3)
+  curDartsInBoard = ref(0)
 
   state = ref<PlayerState>(PlayerState.THROW_DARTS)
 
@@ -76,17 +77,17 @@ export class DartPlayer {
 
     if (this.state.value == PlayerState.REMOVE_DARTS) return;
 
+    this.curDartsInBoard.value = (this.curDartsInBoard.value + 1) % 3
+
     this.numThrows.value++;
     const idx = this.throws.value.findIndex(x => x.field === '');
     if (idx !== -1) {
       this.throws.value[idx] = t;
     }
 
-    const board = this.boardRef && typeof this.boardRef === 'object' && 'value' in this.boardRef
-      ? this.boardRef.value
-      : this.boardRef
+    const board = this.boardRef
 
-    if (board && typeof board.addHitMarker === 'function' && typeof t.x === 'number' && typeof t.y === 'number') {
+    if (board && typeof board.addHitMarker === 'function') {
       board.addHitMarker(t.x, t.y)
     }
     this.modifyScore(t)
@@ -103,6 +104,12 @@ export class DartPlayer {
       { field: "", score: 0 },
     ];
     this.numThrows.value = 0;
+  }
+
+  endTurn() {
+    this.clearThrows();
+    this.state.value = PlayerState.THROW_DARTS;
+    this.lastScore.value = this.score.value;
   }
 
 }

@@ -1,6 +1,7 @@
 import { SubscribeMessage, WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import ChatService from './ws.service';
+import DartSocketService from './ws.service';
+import jwt from 'jsonwebtoken';
 
 @WebSocketGateway({
   cors: {
@@ -12,31 +13,37 @@ export class DartSocket {
   @WebSocketServer()
   server: Server;
 
-  sessions: Map<string, Socket[]> = new Map();
-
-  constructor(private chatService: ChatService) {}
+  constructor(private dartSocketService: DartSocketService) {}
   
   handleConnection(client: Socket): void {
-    if (!client.handshake.auth.token) {
+    const token = client.handshake.auth.token;
+    if (!token) {
       client.emit('error', { message: 'Unauthorized', status: 401 });
       setTimeout(() => client.disconnect(), 500);
       return;
     }
 
-    if (!this.sessions.has('test')) {
-      this.sessions.set('test', []);
+    try {
+      const secret = process.env.JWT_SECRET ?? 'dev-only-secret-change-me';
+      jwt.verify(token, secret);
+    } catch (err) {
+      client.emit('error', { message: 'Invalid token', status: 401 });
+      setTimeout(() => client.disconnect(), 500);
+      return;
     }
-    this.sessions.get('test')?.push(client);
 
     client.addListener('disconnect', () => {
-      console.log(`Client disconnected: ${client.id}`);
+      this.dartSocketService.handleDisconnect(client);
     })
+
+    client.addListener('dart_event', (msg) => {
+      this.dartSocketService.handleMessage(client, 'dart_event', msg);
+    })
+
     client.addListener('message', (msg) => {
-      this.sessions.get('test')?.forEach(c => {
-        this.server.to(c.id).emit('message', msg);
-      });
+      this.dartSocketService.handleMessage(client, 'message', msg);
     })
     
-    console.log(`Client connected: ${client.id} from ${client.client.conn.remoteAddress}, token: ${client.handshake.auth.token}`);
+    console.log(`Client connected: ${client.id} from ${client.client.conn.remoteAddress}, token: ${token}`);
   }
 }

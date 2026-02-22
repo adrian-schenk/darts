@@ -1,12 +1,14 @@
-import { Controller, Get, Param, Query, ParseIntPipe, HttpException, HttpStatus, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, ParseIntPipe, HttpException, HttpStatus, UseGuards, Post } from '@nestjs/common';
 import { ApiService, Checkout } from './api.service';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { Public } from 'src/auth/public.decorator';
+import DartsGameService from 'src/darts/game/game.service';
+import { GameEntity } from 'src/darts/game/game.entity';
 
 @UseGuards(JwtAuthGuard)
 @Controller('api')
 export class ApiController {
-  constructor(private readonly apiService: ApiService) {}
+  constructor(private readonly apiService: ApiService, private readonly dartsGameService: DartsGameService) {}
 
   @Public()
   @Get('/test')
@@ -51,5 +53,32 @@ export class ApiController {
       doubleOut: parsedDoubleOut,
       checkouts,
     };
+  }
+
+  @Post('/create-training/:mode')
+  async createTraining(@Param('mode') mode: string) {
+    
+    const validModes = ['target', 'around', 'checkouts', 'max'];
+    if (!validModes.includes(mode)) {
+      throw new HttpException(
+        `Invalid game mode. Valid modes are: ${validModes.join(', ')}`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const game: GameEntity = await this.dartsGameService.createDartGame([], mode, 'waiting');
+
+    return { gameId: game.gameId, mode };
+  }
+
+  @Get('/game/:gameId')
+  async getGame(@Param('gameId') gameId: string) {
+    const game: GameEntity| null = await this.dartsGameService.getDartGame(gameId);
+    if (!game) {
+      throw new HttpException('Game not found', HttpStatus.NOT_FOUND);
+    }
+    
+    const { teamPlayers, mode, status, createdAt, updatedAt } = game;
+    return { gameId, teamPlayers, mode, status, createdAt, updatedAt };
   }
 }

@@ -11,6 +11,7 @@ import { AuthModule } from './auth/auth.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MongooseModule } from '@nestjs/mongoose';
 import * as dotenv from 'dotenv';
+import { WsModule } from './ws/ws.module';
 dotenv.config({ path: join(__dirname, '..', '.env') });
 
 @Module({
@@ -28,12 +29,13 @@ dotenv.config({ path: join(__dirname, '..', '.env') });
       autoLoadEntities: true,
       synchronize: true,
     }),
-    MongooseModule.forRoot(process.env.MONGO_URI || 'mongodb://localhost:27017/darts'),
+    MongooseModule.forRoot(process.env.MONGO_URI || `mongodb://${process.env.MONGO_USERNAME}:${process.env.MONGO_PASSWORD}@localhost:${process.env.MONGO_PORT}/${process.env.MONGO_DATABASE}?authSource=admin`),
     UsersModule,
     ApiModule,
     AuthModule,
+    WsModule
   ],
   controllers: [AppController],
-  providers: [AppService, DartSocket, DartSocketService],
+  providers: [AppService, DartSocket],
 })
 export class AppModule {}
