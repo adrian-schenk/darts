@@ -65,6 +65,19 @@ services:
     volumes:
       - pgadmin_data:/var/lib/pgadmin
 
+  mongo-express:
+    image: mongo-express:latest
+    container_name: darts-mongo-express
+    restart: unless-stopped
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_INITDB_ROOT_USERNAME:-darts}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-darts}
+      ME_CONFIG_MONGODB_SERVER: darts-mongodb
+    ports:
+      - '8081:8081'
+    depends_on:
+      - mongodb
+
 volumes:
   postgres_data:
   mongodb_data:
