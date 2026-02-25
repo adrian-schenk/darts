@@ -39,6 +39,10 @@ export default function useSocket() {
       status.value = "disconnected";
     });
 
+    socket.on("ping", () => {
+      socket.emit("pong");
+    });
+
     socket.onAny((event: any, ...args: any[]) => {
       if (!args[0].type) return;
       console.log(`Received event: ${event}`, args[0]);
