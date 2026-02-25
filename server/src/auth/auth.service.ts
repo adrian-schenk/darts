@@ -80,6 +80,7 @@ export class AuthService {
     const payload: JwtPayload = {
       tokenId: tokenId,
       uid: user.id.toString(),
+      uuid: user.uuid,
       username: user.username,
       email: user.email,
     };
