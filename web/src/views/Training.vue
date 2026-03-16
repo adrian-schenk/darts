@@ -67,17 +67,25 @@ onMounted(() => {
 		fetch(import.meta.env.VITE_API_BASE_URL + '/game/' + props.sessionid, {
 			method: 'GET',
 			headers: { 'Authorization': getBearer(), 'Content-Type': 'application/json' },
-		}).then(res => res.json())
-			.then(data => {
-				if (data.gameId) {
-					if (data.mode) {
-						mode.value = data.mode
-					}
+		})
+		.then(res => res.json())
+		.then(data => {
+			if (data.gameId) {
+				if (data.mode) {
+					mode.value = data.mode
 				}
-			})
-			.catch(err => {
-				console.error('Error fetching game data:', err);
-			});
+			}
+
+			if (mode.value == 'target') {
+				curTarget.value = getNextTarget()
+			}
+
+			send("join-game", { gameId: props.sessionid });
+		})
+		.catch(err => {
+			console.error('Error fetching game data:', err);
+		});
+
 	}
 })
 
@@ -149,13 +157,14 @@ const getNextTarget = () => {
 }
 
 watch(
-	() => data?.dart_event?.dart_hit,
+	() => data?.['dart-event']?.dart_hit,
 	(hitInfo) => {
 		const { x, y } = hitInfo.data
-
+		
 		if (locked.value) return;
-
-		if (props.mode == 'checkouts') {
+		
+		if (mode.value == 'checkouts') {
+			console.log(hitInfo)
 			hitInfo.data.segment = hitInfo.data.segment.replace(/-inner|-outer/, '')
 			PlayerRef.value?.PlayerInterface?.addThrow({
 				field: getFieldName(hitInfo.data.segment),
@@ -164,7 +173,7 @@ watch(
 				y: DartboardRef.value?.getSegmentInfo?.(hitInfo.data.segment)?.y ?? y
 			});
 		}
-		if (props.mode == 'target') {
+		if (mode.value == 'target') {
 			DartboardRef.value?.addHitMarker?.(x, y)
 			hitInfo.data.segment = hitInfo.data.segment.replace(/-inner|-outer/, '')
 			if (curTarget.value && hitInfo.data.segment == curTarget.value) {
@@ -188,7 +197,7 @@ watch(
 )
 
 onMounted(() => {
-	if (props.mode === 'target') {
+	if (mode.value === 'target') {
 		curTarget.value = getNextTarget()
 	}
 })

@@ -127,7 +127,7 @@ const handleBoardClick = (event: MouseEvent) => {
   const finalY = (mouseY * scale) - 250
 
   //console.log(`Hit at: x=${finalX.toFixed(2)}, y=${finalY.toFixed(2)}`)
-  send('dart_event', { type: 'dart_hit', data: { x: finalX, y: finalY, segment: activeSegment.value ?? 'miss'} })
+  send('dart-event', { type: 'dart_hit', data: { x: finalX, y: finalY, segment: activeSegment.value ?? 'miss'} })
 }
 
 const addHitMarker = (x: number, y: number) => {

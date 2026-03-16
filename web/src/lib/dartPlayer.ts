@@ -30,7 +30,7 @@ export interface DartPlayerInfo {
 
 export class DartPlayer {
 
-  boardRef
+  boardRef = null
 
   score = ref(0)
   lastScore = ref(0)
