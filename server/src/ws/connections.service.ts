@@ -1,15 +1,32 @@
 import { Injectable } from "@nestjs/common";
+import { Socket } from "node_modules/socket.io/dist/socket";
+import { JwtStrategy } from "src/auth/jwt.strategy";
+import MatchmakingService from "src/darts/matchmaking/mm.service";
 
 @Injectable()
 export default class ConnectionsService {
 
-    private clientsMap: Map<string, any> = new Map();
+    private clientsMap: Map<string, Socket> = new Map();
 
-    constructor() { }
+    constructor(private jwtStrategy: JwtStrategy, private matchmakingService: MatchmakingService) { }
 
-    handleConnection(client: any) {
-        console.log(`Client connected: ${client.id} from ${client.client.conn.remoteAddress}, token: ${client.handshake.auth.token}`);
+    async handleConnection(client: Socket) {
         if (!client.handshake.auth.token) {
+            client.emit('error', { message: 'Unauthorized', status: 401 });
+            setTimeout(() => client.disconnect(), 500);
+            return;
+        }
+        try {
+            const user = await this.jwtStrategy.validateToken(client.handshake.auth.token);
+            if (!user) {
+                client.emit('error', { message: 'Unauthorized', status: 401 });
+                setTimeout(() => client.disconnect(), 500);
+                return;
+            }
+            console.log(`Authenticated user ${user.username} (${user.id}) connected with socket ${client.id}`);
+            client.data.user = user;
+        } catch (err) {
+            console.error(`Authentication error for client ${client.id}:`, err);
             client.emit('error', { message: 'Unauthorized', status: 401 });
             setTimeout(() => client.disconnect(), 500);
             return;
@@ -17,7 +34,7 @@ export default class ConnectionsService {
         this.clientsMap.set(client.id, client);
     }
 
-    handleDisconnect(client: any) {
+    handleDisconnect(client: Socket) {
         console.log(`Client disconnected: ${client.id}`);
         this.clientsMap.delete(client.id);
     }
@@ -28,6 +45,17 @@ export default class ConnectionsService {
 
     getClientById(id: string) {
         return this.clientsMap.get(id) || null;
+    }
+
+    async getUserBySocketId(socketId: string) {
+        const client = this.getClientById(socketId);
+        if (!client) {
+            return null;
+        }
+        if (!client.data.user) {
+            throw new Error('User not found for socket');
+        }
+        return client.data.user;
     }
 
 }

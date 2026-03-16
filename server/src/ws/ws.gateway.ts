@@ -35,19 +35,17 @@ export class DartSocket {
   }
   
   handleConnection(client: Socket): void {
-    
-    this.dartSocketService.handleConnection(client);
 
+    this.dartSocketService.handleConnection(client);
+    
     client.addListener('disconnect', () => {
       this.dartSocketService.handleDisconnect(client);
     })
 
-    client.addListener('dart_event', (msg) => {
-      this.dartSocketService.handleMessage(client, 'dart_event', msg);
-    })
-
-    client.addListener('message', (msg) => {
-      this.dartSocketService.handleMessage(client, 'message', msg);
-    })
+    client.onAny((event, ...args) => {
+      args = args.length > 1 ? args : args[0];
+      this.dartSocketService.handleMessage(client, event, args);
+      console.log(`Received event: ${event} with args:`, args);
+    });
   }
 }

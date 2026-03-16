@@ -36,6 +36,6 @@ dotenv.config({ path: join(__dirname, '..', '.env') });
     WsModule
   ],
   controllers: [AppController],
-  providers: [AppService, DartSocket],
+  providers: [AppService],
 })
 export class AppModule {}

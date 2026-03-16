@@ -14,12 +14,17 @@ export class UsersService {
     const user = this.userRepository.create({ username, email, password: passwordHash, uuid: this.generateUuid() });
     return this.userRepository.save(user);
   }
+
   async findByIdentifier(identifier: string): Promise<User | null> {
     let user = await this.findByUsername(identifier);
     if (!user) {
       user = await this.findByEmail(identifier);
     }
     return user;
+  }
+
+  async findByUuid(uuid: string): Promise<User | null> {
+    return this.userRepository.findOneBy({ uuid });
   }
 
   async findAll(): Promise<User[]> {

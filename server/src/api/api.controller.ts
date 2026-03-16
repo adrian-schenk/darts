@@ -1,14 +1,15 @@
-import { Controller, Get, Param, Query, ParseIntPipe, HttpException, HttpStatus, UseGuards, Post } from '@nestjs/common';
+import { Controller, Get, Param, Query, ParseIntPipe, HttpException, HttpStatus, UseGuards, Post, Req } from '@nestjs/common';
 import { ApiService, Checkout } from './api.service';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { Public } from 'src/auth/public.decorator';
 import DartsGameService from 'src/darts/game/game.service';
 import { GameEntity } from 'src/darts/game/game.entity';
+import MatchmakingService from 'src/darts/matchmaking/mm.service';
 
 @UseGuards(JwtAuthGuard)
 @Controller('api')
 export class ApiController {
-  constructor(private readonly apiService: ApiService, private readonly dartsGameService: DartsGameService) {}
+  constructor(private readonly apiService: ApiService, private readonly dartsGameService: DartsGameService, private readonly matchmakingService: MatchmakingService) {}
 
   @Public()
   @Get('/test')
@@ -56,7 +57,7 @@ export class ApiController {
   }
 
   @Post('/create-training/:mode')
-  async createTraining(@Param('mode') mode: string) {
+  async createTraining(@Param('mode') mode: string, @Req() req) {
     
     const validModes = ['target', 'around', 'checkouts', 'max'];
     if (!validModes.includes(mode)) {
@@ -66,8 +67,8 @@ export class ApiController {
       );
     }
 
-    const game: GameEntity = await this.dartsGameService.createDartGame([], mode, 'waiting');
-
+    const game: GameEntity = await this.dartsGameService.createTraining(req.user, mode);
+    
     return { gameId: game.gameId, mode };
   }
 
@@ -80,5 +81,19 @@ export class ApiController {
     
     const { teamPlayers, mode, status, createdAt, updatedAt } = game;
     return { gameId, teamPlayers, mode, status, createdAt, updatedAt };
+  }
+
+  @Post('/join-queue/:mode')
+  async joinQueue(@Param('mode') mode: string, @Req() req) {
+    const user = req.user;
+    this.matchmakingService.joinQueue(mode, req.user);
+    return { message: `User ${user.username} joined ${mode} queue` };
+  }
+
+  @Public()
+  @Get('/queue/:mode')
+  async getQueue(@Param('mode') mode: string) {
+    const queue = await this.matchmakingService.getQueue(mode);
+    return { mode, queue };
   }
 }
