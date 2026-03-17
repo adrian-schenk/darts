@@ -3,7 +3,6 @@ import { Socket } from "node_modules/socket.io/dist/socket";
 import DartsEventService from "src/darts/darts_event/dartsevent.service";
 import ConnectionsService from "./connections.service";
 import DartsGameService from "src/darts/game/game.service";
-import { JwtStrategy } from "src/auth/jwt.strategy";
 
 @Injectable()
 export default class DartSocketService {
