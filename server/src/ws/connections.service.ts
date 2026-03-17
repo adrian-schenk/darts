@@ -1,6 +1,8 @@
 import { Injectable } from "@nestjs/common";
 import { Socket } from "node_modules/socket.io/dist/socket";
 import { JwtStrategy } from "src/auth/jwt.strategy";
+import DartsGameService from "src/darts/game/game.service";
+import { Inject, forwardRef } from "@nestjs/common";
 import MatchmakingService from "src/darts/matchmaking/mm.service";
 
 @Injectable()
@@ -8,7 +10,11 @@ export default class ConnectionsService {
 
     private clientsMap: Map<string, Socket> = new Map();
 
-    constructor(private jwtStrategy: JwtStrategy, private matchmakingService: MatchmakingService) { }
+    constructor(
+        private jwtStrategy: JwtStrategy,
+        private readonly matchmakingService: MatchmakingService,
+        @Inject(forwardRef(() => DartsGameService)) private readonly gameService: DartsGameService
+    ) { }
 
     async handleConnection(client: Socket) {
         if (!client.handshake.auth.token) {
@@ -37,6 +43,7 @@ export default class ConnectionsService {
     handleDisconnect(client: Socket) {
         console.log(`Client disconnected: ${client.id}`);
         this.clientsMap.delete(client.id);
+        this.gameService.leaveDartGame(client.data.gameId, client);
     }
 
     getClients() {

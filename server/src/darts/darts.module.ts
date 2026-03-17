@@ -7,6 +7,7 @@ import DartsEventService from "./darts_event/dartsevent.service";
 import { WsModule } from "src/ws/ws.module";
 import { AppModule } from "src/app.module";
 import MatchmakingService from "./matchmaking/mm.service";
+import { DartsCheckoutLogicService } from "./logic/checkout.service";
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import MatchmakingService from "./matchmaking/mm.service";
       { name: GameEntity.name, schema: GameEntitySchema }
     ])
   ],
-  providers: [DartsService, DartsGameService, DartsEventService, MatchmakingService],
-  exports: [DartsService, DartsGameService, DartsEventService, MatchmakingService]
+  providers: [DartsService, DartsGameService, DartsEventService, MatchmakingService, DartsCheckoutLogicService],
+  exports: [DartsService, DartsGameService, DartsEventService, MatchmakingService, DartsCheckoutLogicService]
 })
 export class DartsModule {}

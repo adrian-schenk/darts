@@ -6,11 +6,13 @@ import ConnectionsService from "src/ws/connections.service";
 import { GameEntity } from "./game.entity";
 import { User } from "src/users/user.entity";
 import { Socket } from "socket.io";
+import GameState, { CheckoutGameState, DefaultGameState, TargetGameState } from "./gamestate";
 
 
 @Injectable()
 export default class DartsGameService {
 
+    public gameStates = new Map<string, GameState>();
     public joinedClients: Map<string, Array<Socket>> = new Map();
 
     constructor(
@@ -20,7 +22,23 @@ export default class DartsGameService {
 
     async createTraining(user: User, mode: string) {
         const createdGame = new this.gameModel({ playerIds: [], mode, status: 'open', owner: user.id });
-        return await createdGame.save();
+        let res = await createdGame.save();
+
+        let gameState: GameState;
+        switch (mode) {
+            case 'target':
+                gameState = new TargetGameState(res);
+                break;
+            case 'checkouts':
+                gameState = new CheckoutGameState(res);
+                break;
+            default:
+                gameState = new DefaultGameState(res);
+                break;
+        }
+        this.gameStates.set(res.gameId, gameState);
+
+        return res;
     }
 
     async createDartGame(players: string[] | {[key: string]: string[]}, mode: string, status: string = 'open') {
@@ -53,10 +71,31 @@ export default class DartsGameService {
         }
     }
 
+    async syncGameState(socket: Socket, msg: { gameId: string }) {
+        const { gameId } = msg;
+        const gameState = await this.getGameState(gameId);
+
+        if (!gameState) {
+            return;
+        }
+
+        socket.emit('sync-game', gameState);
+    }
+
+    async getGameState(gameId: string): Promise<GameState | null> {
+        return this.gameStates.get(gameId) || null;
+    }
+
     async userCanJoinGame(gameId: string, user: User | null): Promise<boolean> {
         if (!user) {
             return false;
         }
         return true; 
+    }
+
+    async broadcast(gameId: string, event: string, data: any) {
+        for (const clients of this.joinedClients.get(gameId) || []) {
+            clients.emit(event, data);
+        }
     }
 }

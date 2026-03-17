@@ -76,11 +76,8 @@ onMounted(() => {
 				}
 			}
 
-			if (mode.value == 'target') {
-				curTarget.value = getNextTarget()
-			}
-
 			send("join-game", { gameId: props.sessionid });
+			send("sync-game", { gameId: props.sessionid });
 		})
 		.catch(err => {
 			console.error('Error fetching game data:', err);
@@ -95,13 +92,6 @@ const modes = [
 	{ value: 'checkouts', label: 'Checkouts', desc: 'Practice finishing combinations.' },
 	{ value: 'max', label: 'Max Score', desc: 'Aim for highest scoring.' }
 ]
-
-const curTarget = ref<string>('')
-const curTargetHit = ref<boolean>(false)
-const curThrows = ref<number>(0)
-const totalThrows = ref<number>(0)
-const totalHits = ref<number>(0)
-const locked = ref<boolean>(false)
 
 const checkoutDifficulties = [
 	{ value: 'auto', label: 'Auto', desc: 'Finish with any combination.' },
@@ -135,72 +125,6 @@ const getDifficultyClass = (value: string) => {
 	if (value === 'hard') return trainingStore.checkoutDifficulty === value ? 'border-red-600 bg-red-500/20 text-white' : 'border-red-400 text-white'
 	return trainingStore.checkoutDifficulty === value ? 'border-blue-600 bg-blue-500/20 text-white' : 'border-blue-500 text-white'
 }
-
-const getFieldName = (id: string) => {
-	if (id === 'miss') return 'Miss'
-	if (id === 'outer-bull') return 'SB'
-	if (id === 'bullseye') return 'Bull'
-	const [type, num] = id.split('-')
-	if (type === 'single') return `S${num}`
-	if (type === 'double') return `D${num}`
-	if (type === 'triple') return `T${num}`
-	return id
-}
-
-const getAccuracy = () => {
-	return totalThrows.value > 0 ? Math.round((totalHits.value / totalThrows.value) * 100) : 0
-}
-
-const getNextTarget = () => {
-	const fields = DartboardRef.value?.getAllFields?.() ?? ['single-20']
-	return fields[Math.floor(Math.random() * fields.length)] ?? 'single-20'
-}
-
-watch(
-	() => data?.['dart-event']?.dart_hit,
-	(hitInfo) => {
-		const { x, y } = hitInfo.data
-		
-		if (locked.value) return;
-		
-		if (mode.value == 'checkouts') {
-			console.log(hitInfo)
-			hitInfo.data.segment = hitInfo.data.segment.replace(/-inner|-outer/, '')
-			PlayerRef.value?.PlayerInterface?.addThrow({
-				field: getFieldName(hitInfo.data.segment),
-				score: DartboardRef.value?.getSegmentInfo?.(hitInfo.data.segment)?.score ?? 0,
-				x: DartboardRef.value?.getSegmentInfo?.(hitInfo.data.segment)?.x ?? x,
-				y: DartboardRef.value?.getSegmentInfo?.(hitInfo.data.segment)?.y ?? y
-			});
-		}
-		if (mode.value == 'target') {
-			DartboardRef.value?.addHitMarker?.(x, y)
-			hitInfo.data.segment = hitInfo.data.segment.replace(/-inner|-outer/, '')
-			if (curTarget.value && hitInfo.data.segment == curTarget.value) {
-				curTargetHit.value = true
-				totalHits.value++
-				locked.value = true
-				setTimeout(() => {
-					DartboardRef.value?.clearMarkers?.()
-					curTarget.value = getNextTarget()
-					curThrows.value = 0
-					curTargetHit.value = false
-					locked.value = false
-				}, 1500);
-			} else {
-				curThrows.value++
-			}
-			totalThrows.value++
-		}
-
-	}
-)
-
-onMounted(() => {
-	if (mode.value === 'target') {
-		curTarget.value = getNextTarget()
-	}
-})
 
 </script>
 

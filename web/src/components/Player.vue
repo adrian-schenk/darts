@@ -10,22 +10,25 @@
     <div class="text-8xl text-white my-4 font-bold">{{ PlayerInterface.score }}</div>
     <div class="flex justify-center items-center gap-2 mt-4 text-gray-400">
         <div
-          v-for="(t, i) in PlayerInterface.throws.value"
+          v-for="i in 3"
           :key="i"
           class="w-32 h-24 rounded-md flex flex-col items-center justify-center"
-          :class="t.field !== '' ? (t.score > 0 ? 'bg-green-400' : 'bg-slate-600') : 'bg-slate-600'"
+          :class="(PlayerInterface.throws.value[i - 1] as Throw).field !== '' ? ((PlayerInterface.throws.value[i - 1] as Throw).score > 0 ? 'bg-green-400' : 'bg-slate-600') : 'bg-slate-600'"
         >
-          <template v-if="t && t.score > 0">
+          <template v-if="PlayerInterface.throws.value[i - 1] && (PlayerInterface.throws.value[i - 1] as Throw).score > 0">
             <div class="text-2xl font-bold text-white">
-              {{ t.score }}
+              {{ (PlayerInterface.throws.value[i - 1] as Throw).score }}
             </div>
             <div class="text-sm text-white">
-              {{ t.field }}
+              {{ (PlayerInterface.throws.value[i - 1] as Throw).field }}
             </div>
           </template>
           <template v-else>
-            <div class="text-xl font-bold text-red-500">
-              {{ t.field }}
+            <div v-if="(PlayerInterface.throws.value[i - 1] as Throw).field === '' && PlayerInterface.checkoutCombination.value[i-1]" class="flex flex-col items-center justify-center w-full h-full">
+              <span class="text-gray-300 text-lg font-bold">{{ PlayerInterface.checkoutCombination.value[i-1] }}</span>
+            </div>
+            <div v-else class="text-xl font-bold text-red-500">
+              {{ (PlayerInterface.throws.value[i - 1] as Throw).field }}
             </div>
           </template>
         </div>
@@ -70,6 +73,7 @@
 <script setup lang="ts">
 import { watch } from "vue";
 import {DartPlayer, PlayerState} from "@/lib/dartPlayer.ts";
+import type { Throw } from "@/lib/dart";
 
 const props = defineProps({
   showName: { type: Boolean, default: true },

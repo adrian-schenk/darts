@@ -13,7 +13,8 @@ export default class DartSocketService {
     constructor(private dartsEventService: DartsEventService, private connectionsService: ConnectionsService, private gameService: DartsGameService) {
         this.handlerMap = {
             'dart-event': this.dartsEventService.handleDartsEvent.bind(this.dartsEventService),
-            'join-game': this.gameService.joinDartGame.bind(this.gameService)
+            'join-game': this.gameService.joinDartGame.bind(this.gameService),
+            'sync-game': this.gameService.syncGameState.bind(this.gameService),
         };
     }
 
