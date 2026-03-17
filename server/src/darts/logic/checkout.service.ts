@@ -25,6 +25,10 @@ export class DartsCheckoutLogicService {
     }
   }
 
+  public scoreFinishable(score: number): boolean {
+    return score == 0 || score > 170 || this.checkoutPossible(score);
+  }
+
   public checkoutPossible(score: number): boolean {
     if (score < 2 || score > 170) {
       return false;

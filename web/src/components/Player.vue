@@ -13,9 +13,9 @@
           v-for="i in 3"
           :key="i"
           class="w-32 h-24 rounded-md flex flex-col items-center justify-center"
-          :class="(PlayerInterface.throws.value[i - 1] as Throw).field !== '' ? ((PlayerInterface.throws.value[i - 1] as Throw).score > 0 ? 'bg-green-400' : 'bg-slate-600') : 'bg-slate-600'"
+          :class="(PlayerInterface.throws.value[i - 1] as Throw).field !== '' ? ((PlayerInterface.throws.value[i - 1] as Throw).score > 0 && !(PlayerInterface.throws.value[i - 1] as Throw).invalid ? 'bg-green-400' : 'bg-slate-600') : 'bg-slate-600'"
         >
-          <template v-if="PlayerInterface.throws.value[i - 1] && (PlayerInterface.throws.value[i - 1] as Throw).score > 0">
+          <template v-if="PlayerInterface.throws.value[i - 1] && (PlayerInterface.throws.value[i - 1] as Throw).score > 0 && !(PlayerInterface.throws.value[i - 1] as Throw).invalid">
             <div class="text-2xl font-bold text-white">
               {{ (PlayerInterface.throws.value[i - 1] as Throw).score }}
             </div>
@@ -33,7 +33,7 @@
           </template>
         </div>
       <template v-if="PlayerInterface.state.value === PlayerState.REMOVE_DARTS">
-        <div class="absolute bg-slate-700/80 top-1/2 -translate-y-1/2 w-full h-24 flex flex-col items-center justify-center"><p class="text-yellow-500 font-bold">Remove darts</p></div>
+        <div class="absolute bg-slate-700/80 top-1/2 -translate-y-1/2 w-full h-24 flex flex-col items-center justify-center"><p class="text-yellow-500 font-bold">Removing darts</p></div>
       </template>
     </div>
     <div v-if="showHistory"

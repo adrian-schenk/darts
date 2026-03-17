@@ -85,7 +85,8 @@ export class DartPlayer {
         const t = gameState.currentThrows[i];
         this.throws.value[i] = {
           field: t.field,
-          score: t.score
+          score: t.score,
+          invalid: t.invalid
         }
       }
 

@@ -74,6 +74,7 @@ export class GameState extends JsonSerializable {
 export class DefaultGameState extends GameState {
 
     score: number = 501;
+    saveScore: number = this.score;
     checkoutCombination: any[] = new Array();
 
     @Exclude()
@@ -88,15 +89,22 @@ export class DefaultGameState extends GameState {
 
     public onDartHit(throwInfo: any): void {
         const fieldScore = this.getFieldScore(throwInfo.field);
-        
+
         this.currentThrows.push({
             score: fieldScore,
             field: this.getFieldName(throwInfo.field)
         });
         
-        this.setScore(this.score - fieldScore);
+        if (!this.setScore(this.score - fieldScore)) {
+            this.currentThrows.at(-1)!.invalid = true;
+            this.checkoutCombination = [];
+            this.setScore(this.saveScore);
+            this.state = PlayerState.REMOVE_DARTS;
+            return;
+        }
 
         if (this.currentThrows.length >= this.throwsPerTurn) {
+            this.saveScore = this.score;
             this.state = PlayerState.REMOVE_DARTS;
         }
     }
@@ -105,15 +113,25 @@ export class DefaultGameState extends GameState {
         this.currentThrows = [];
         this.state = PlayerState.THROW_DARTS;
 
-        if (checkoutLogic.checkoutPossible(this.score)) {
-            this.checkoutCombination = checkoutLogic.findCheckouts(this.score, this.throwsPerTurn - this.currentThrows.length)[0]?.darts.map(dart => dart.display) || [];
-        } else {
-            this.checkoutCombination = [];
-        }
+        this.recalculateCheckoutCombination();
     }
 
-    public setScore(score: number): void {
+    public setScore(score: number): boolean {
+        if (score >= 0 && checkoutLogic.scoreFinishable(score)) {
+            this.score = score;
+            this.recalculateCheckoutCombination();
+            return true;
+        }
+        return false;
+    }
+
+    public setInitialScore(score: number): void {
         this.score = score;
+        this.saveScore = score;
+        this.recalculateCheckoutCombination();
+    }
+
+    public recalculateCheckoutCombination(): void {
         if (checkoutLogic.checkoutPossible(this.score)) {
             let combo = checkoutLogic.findCheckouts(this.score, this.throwsPerTurn - this.currentThrows.length)[0]?.darts.map(dart => dart.display) || [];
             this.checkoutCombination = Array(this.currentThrows.length).fill("").concat(combo);
@@ -138,7 +156,7 @@ export class CheckoutGameState extends DefaultGameState {
 
     constructor(game: GameEntity) {
         super(game);
-        this.setScore(Number(this.getRandomTarget()));
+        this.setInitialScore(Number(this.getRandomTarget()));
     }
 
     public onDartHit(throwInfo: any): void {
@@ -153,7 +171,7 @@ export class CheckoutGameState extends DefaultGameState {
         super.onDartRemove();
 
         if (this.score <= 0) {
-            this.setScore(Number(this.getRandomTarget()));
+            this.setInitialScore(Number(this.getRandomTarget()));
         }
     }
 
