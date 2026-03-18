@@ -1,7 +1,6 @@
-import { SubscribeMessage, WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
+import { WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import DartSocketService from './ws.service';
-import jwt from 'jsonwebtoken';
 import { Injectable } from '@nestjs/common';
 
 @WebSocketGateway({
@@ -11,7 +10,7 @@ import { Injectable } from '@nestjs/common';
   }
 })
 @Injectable()
-export class DartSocket {
+export class DartSocket implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
@@ -33,19 +32,18 @@ export class DartSocket {
     }
     return false;
   }
-  
-  handleConnection(client: Socket): void {
 
+  async handleConnection(client: Socket): Promise<void> {
     this.dartSocketService.handleConnection(client);
-    
-    client.addListener('disconnect', () => {
-      this.dartSocketService.handleDisconnect(client);
-    })
 
     client.onAny((event, ...args) => {
-      args = args.length > 1 ? args : args[0];
-      this.dartSocketService.handleMessage(client, event, args);
-      console.log(`Received event: ${event} with args:`, args);
+      const payload = args.length > 1 ? args : args[0];
+      this.dartSocketService.handleMessage(client, event, payload);
+      console.log(`Received event: ${event} with args:`, payload);
     });
+  }
+
+  async handleDisconnect(client: Socket): Promise<void> {
+    this.dartSocketService.handleDisconnect(client);
   }
 }
