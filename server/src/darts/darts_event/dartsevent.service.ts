@@ -16,7 +16,8 @@ export default class DartsEventService {
             return;
         }
 
-        let gameState = this.gameService.gameStates.get(socket.data.gameId);
+        let gameState = await this.gameService.getGameState(socket.data.gameId);
+
         if (!gameState) return;
         switch (msg.type) {
             case 'dart_hit':

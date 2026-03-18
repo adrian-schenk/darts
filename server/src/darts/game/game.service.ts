@@ -7,7 +7,8 @@ import { GameEntity } from "./game.entity";
 import { User } from "src/users/user.entity";
 import { Socket } from "socket.io";
 import GameState, { CheckoutGameState, DefaultGameState, TargetGameState } from "./gamestate";
-
+import { InjectRedis } from "@nestjs-modules/ioredis/dist/redis.decorators";
+import Redis from "ioredis/built/Redis";
 
 @Injectable()
 export default class DartsGameService {
@@ -17,8 +18,18 @@ export default class DartsGameService {
 
     constructor(
         private connectionsService: ConnectionsService,
-        @InjectModel(GameEntity.name) private gameModel: Model<GameEntity>
+        @InjectModel(GameEntity.name) private gameModel: Model<GameEntity>,
+        @InjectRedis() private readonly redis: Redis
     ) {}
+
+    async setGameState(gameId: string, state: GameState) {
+        this.gameStates.set(gameId, state);
+        await this.redis.set(`gameState:${gameId}`, state.toRealJSON());
+    }
+
+    async getGameState(gameId: string): Promise<GameState | null> {
+        return this.gameStates.get(gameId) || null;
+    }
 
     async createTraining(user: User, mode: string) {
         const createdGame = new this.gameModel({ playerIds: [], mode, status: 'open', owner: user.id });
@@ -36,7 +47,7 @@ export default class DartsGameService {
                 gameState = new DefaultGameState(res);
                 break;
         }
-        this.gameStates.set(res.gameId, gameState);
+        await this.setGameState(res.gameId, gameState);
 
         return res;
     }
@@ -80,10 +91,6 @@ export default class DartsGameService {
         }
 
         socket.emit('sync-game', gameState);
-    }
-
-    async getGameState(gameId: string): Promise<GameState | null> {
-        return this.gameStates.get(gameId) || null;
     }
 
     async userCanJoinGame(gameId: string, user: User | null): Promise<boolean> {
