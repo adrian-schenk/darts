@@ -78,8 +78,20 @@ services:
     depends_on:
       - mongodb
 
+  redis-insight:
+    image: redis/redisinsight:latest
+    container_name: darts-redis-insight
+    restart: unless-stopped
+    ports:
+      - '5540:5540'
+    depends_on:
+      - redis
+    volumes:
+      - redis_insight_data:/data
+
 volumes:
   postgres_data:
   mongodb_data:
   redis_data:
   pgadmin_data:
+  redis_insight_data:
