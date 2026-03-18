@@ -12,6 +12,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { MongooseModule } from '@nestjs/mongoose';
 import * as dotenv from 'dotenv';
 import { WsModule } from './ws/ws.module';
+import { RedisModule } from '@nestjs-modules/ioredis/dist/redis.module';
 dotenv.config({ path: join(__dirname, '..', '.env') });
 
 @Module({
@@ -30,6 +31,10 @@ dotenv.config({ path: join(__dirname, '..', '.env') });
       synchronize: true,
     }),
     MongooseModule.forRoot(process.env.MONGO_URI || `mongodb://${process.env.MONGO_USERNAME}:${process.env.MONGO_PASSWORD}@localhost:${process.env.MONGO_PORT}/${process.env.MONGO_DATABASE}?authSource=admin`),
+    RedisModule.forRoot({
+      type: 'single',
+      url: 'redis://localhost:6379',
+    }),
     UsersModule,
     ApiModule,
     AuthModule,
