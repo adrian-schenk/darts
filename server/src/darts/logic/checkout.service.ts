@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+import { log } from "console";
 
 export interface DartScore {
   value: number;
@@ -21,7 +22,8 @@ export class DartsCheckoutLogicService {
   constructor() {
     this.initializeValidScores();
     for (let score = 2; score <= 170; score++) {
-      this.possibleCheckouts[score] = this.checkoutPossible(score);
+      if (this.checkoutPossible(score))
+        this.possibleCheckouts[score] = true;
     }
   }
 

@@ -3,6 +3,10 @@ import { DartsCheckoutLogicService } from './checkout.service';
 describe('DartsCheckoutLogicService', () => {
   let service: DartsCheckoutLogicService = new DartsCheckoutLogicService();
 
+  it('possible checkouts should not contain 163', () => {
+    expect(service.possibleCheckouts[163]).toBeUndefined();
+  })
+
   it('should return possible checkouts for 170 with 3 darts', () => {
     const checkouts = service.findCheckouts(170, 3);
     expect(checkouts.length).toBeGreaterThan(0);
