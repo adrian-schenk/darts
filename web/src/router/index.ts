@@ -1,4 +1,7 @@
+import { useCookies } from "@vueuse/integrations/useCookies.js";
 import { createRouter, createWebHistory } from "vue-router";
+
+const cookies = useCookies(["auth_token"]);
 
 const router = createRouter({
     history: createWebHistory(),
@@ -28,7 +31,8 @@ const router = createRouter({
                 { path: 'friends', component: () => import('../views/Dashboard.vue') },
                 { path: 'settings', component: () => import('../views/Dashboard.vue') },
                 { path: '/:pathMatch(.*)', component: () => import('../views/NotFound.vue') }
-            ]
+            ],
+            meta: { requiresAuth: true }
         },
         {
             path: '/:pathMatch(.*)*',
@@ -36,5 +40,16 @@ const router = createRouter({
         }
     ]
 })
+
+router.beforeEach((to, from, next) => {
+    const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
+    const isAuthenticated = !!cookies.get("auth_token");
+
+    if (requiresAuth && !isAuthenticated) {
+        next('/login');
+    } else {
+        next();
+    }
+});
 
 export default router;
