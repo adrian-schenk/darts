@@ -1,5 +1,5 @@
 
-import { Injectable } from "@nestjs/common";
+import { ConsoleLogger, Injectable } from "@nestjs/common";
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import ConnectionsService from "src/ws/connections.service";
@@ -9,6 +9,7 @@ import { Socket } from "socket.io";
 import GameState, { CheckoutGameState, DefaultGameState, TargetGameState } from "./gamestate";
 import { InjectRedis } from "@nestjs-modules/ioredis/dist/redis.decorators";
 import Redis from "ioredis/built/Redis";
+import { log } from "console";
 
 @Injectable()
 export default class DartsGameService {
@@ -32,8 +33,11 @@ export default class DartsGameService {
     }
 
     async createTraining(user: User, mode: string) {
-        const createdGame = new this.gameModel({ playerIds: [], mode, status: 'open', owner: user.id });
-        let res = await createdGame.save();
+        let res = await this.gameModel.findOne({ owner: String(user.id), mode: mode, createdAt: { $gte: new Date(Date.now() - 12 * 60 * 60 * 1000) } }).exec();
+        if (!res) {
+            const createdGame = new this.gameModel({ playerIds: [], mode, status: 'open', owner: user.id });
+            res = await createdGame.save();
+        }
 
         let gameState: GameState;
         switch (mode) {
@@ -66,6 +70,11 @@ export default class DartsGameService {
     async joinDartGame(socket: Socket, msg: { gameId: string }) {
         const { gameId } = msg;
 
+        if (!await this.getDartGame(gameId)) {
+            socket.emit('join-game', { success: false, message: 'Game not found' });
+            return;
+        }
+
         if (!this.joinedClients.has(gameId)) {
             this.joinedClients.set(gameId, []);
         }
@@ -73,6 +82,9 @@ export default class DartsGameService {
             this.joinedClients.get(gameId)?.push(socket);
         }
         socket.data.gameId = gameId;
+
+        socket.emit('join-game', { success: true });
+        socket.emit('sync-game', await this.getGameState(gameId));
     }
 
     async leaveDartGame(gameId: string, client: Socket) {

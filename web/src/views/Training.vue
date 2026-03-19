@@ -50,6 +50,7 @@ import useSocket from '@/lib/socket';
 import router from '@/router';
 import { useTrainingStore } from '@/stores/training/TrainingStore';
 import { Router } from 'lucide-vue-next';
+import { resolve } from 'path';
 import { onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
@@ -59,25 +60,38 @@ let { socket, status, data, send, close } = useSocket();
 
 const PlayerRef = ref<InstanceType<typeof Player> | null>(null);
 const DartboardRef = ref<InstanceType<typeof Dartboard> | null>(null);
-const props = defineProps<{ sessionid?: string }>()
+const props = defineProps<{ gameId?: string }>()
 const mode = ref('');
 
 onMounted(() => {
-	if (props.sessionid) {
-		fetch(import.meta.env.VITE_API_BASE_URL + '/game/' + props.sessionid, {
+	if (props.gameId) {
+		fetch(import.meta.env.VITE_API_BASE_URL + '/game/' + props.gameId, {
 			method: 'GET',
 			headers: { 'Authorization': getBearer(), 'Content-Type': 'application/json' },
 		})
 		.then(res => res.json())
-		.then(data => {
+		.then(async data => {
 			if (data.gameId) {
 				if (data.mode) {
 					mode.value = data.mode
 				}
 			}
 
-			send("join-game", { gameId: props.sessionid });
-			send("sync-game", { gameId: props.sessionid });
+			send("join-game", { gameId: props.gameId });
+
+			await new Promise(resolve => {
+				setTimeout(resolve, 2000);
+				socket.once('join-game', (data: any) => {
+					if (data.success) {
+						resolve(null);
+					} else {
+						router.replace('/training');
+						resolve(null);
+					}
+				});
+			});
+
+			//send("sync-game", { gameId: props.gameId });
 		})
 		.catch(err => {
 			console.error('Error fetching game data:', err);
@@ -109,7 +123,7 @@ const startSession = (mode: string) => {
 		.then(res => res.json())
 		.then(data => {
 			if (data.gameId) {
-				router.replace({ name: 'training-session', params: { sessionid: data.gameId } })
+				router.replace({ name: 'training-session', params: { gameId: data.gameId } })
 			} else {
 				// handle error
 			}

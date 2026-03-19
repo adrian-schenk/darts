@@ -21,6 +21,8 @@ enum PracticeDifficulty {
 export class GameState extends JsonSerializable {
     gameId: string;
     mode: string;
+
+    @Exclude()
     status: string;
 
     state: PlayerState;
