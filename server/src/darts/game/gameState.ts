@@ -1,6 +1,6 @@
-import { Exclude, Transform, Type, instanceToPlain } from "class-transformer";
+import { Exclude, Transform, instanceToPlain, plainToInstance } from "class-transformer";
 import { GameEntity } from "./entities/game.entity";
-import { PlayerState } from "./playerState";
+import { CheckoutPlayerState, DefaultPlayerState, PlayerState, playerStateTypeMap, TargetPlayerState } from "./playerState";
 import { User } from "src/users/user.entity";
 import JsonSerializable from "src/util/JsonSerializable";
 
@@ -21,12 +21,31 @@ export class GameState extends JsonSerializable {
     )
     users: Map<string, string> = new Map();
 
-    @Type(() => PlayerState)
     @Transform(
         ({ value, options }) => Object.fromEntries(
-            Array.from((value as Map<string, PlayerState>).entries()).map(([uuid, playerState]) => [uuid, instanceToPlain(playerState, { ignoreDecorators: options?.ignoreDecorators })])
+            Array.from((value as Map<string, PlayerState>).entries()).map(([uuid, playerState]) => [
+                uuid,
+                {
+                    __type: playerState.constructor.name,
+                    ...instanceToPlain(playerState, { ignoreDecorators: options?.ignoreDecorators }),
+                },
+            ])
         ),
         { toPlainOnly: true }
+    )
+    @Transform(
+        ({ value }) => {
+            const entries = Object.entries(value ?? {}).map(([uuid, plainValue]) => {
+                const raw = plainValue as Record<string, any>;
+                const stateType = raw?.__type;
+                const PlayerStateCtor = playerStateTypeMap[stateType] ?? PlayerState;
+                const { __type, ...payload } = raw ?? {};
+                return [uuid, plainToInstance(PlayerStateCtor, payload)] as const;
+            });
+
+            return new Map<string, PlayerState>(entries);
+        },
+        { toClassOnly: true }
     )
     playerStates: Map<string, PlayerState> = new Map();
     

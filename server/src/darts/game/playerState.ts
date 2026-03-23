@@ -234,4 +234,11 @@ export class CheckoutPlayerState extends DefaultPlayerState {
 
 }
 
+export const playerStateTypeMap: Record<string, new () => PlayerState> = {
+    PlayerState,
+    DefaultPlayerState,
+    TargetPlayerState,
+    CheckoutPlayerState,
+};
+
 export default PlayerState;
