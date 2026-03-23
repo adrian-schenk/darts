@@ -108,6 +108,12 @@ export default class DartsGameService {
         }
     }
 
+    async deleteDartGame(gameId: string) {
+        await this.gameModel.deleteOne({ gameId }).exec();
+        this.gameStates.delete(gameId);
+        this.joinedClients.delete(gameId);
+    }
+
     async syncGameState(socket: Socket, msg: { gameId: string }) {
         const { gameId } = msg;
         const gameState = await this.getGameState(gameId);

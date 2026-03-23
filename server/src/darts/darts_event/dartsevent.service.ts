@@ -18,7 +18,6 @@ export default class DartsEventService {
         }
 
         let gameState = await this.gameService.getGameState(socket.data.gameId);
-
         if (!gameState || socket.data.user.id != gameState.playerStates.get(gameState.currentPlayer)?.userId) return;
         switch (msg.type) {
             case 'dart_hit':
