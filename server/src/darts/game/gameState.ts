@@ -6,23 +6,31 @@ import JsonSerializable from "src/util/JsonSerializable";
 
 export class GameState extends JsonSerializable {
     
-    @Exclude()
+    @Exclude({ toPlainOnly: true })
     joinable: boolean = true;
     gameId: string;
 
-    @Exclude()
+    @Exclude({ toPlainOnly: true })
+    @Transform(
+        ({ value }) => Object.fromEntries((value as Map<string, string>).entries()),
+        { toPlainOnly: true }
+    )
+    @Transform(
+        ({ value }) => new Map<string, string>(Object.entries(value ?? {})),
+        { toClassOnly: true }
+    )
     users: Map<string, string> = new Map();
 
     @Type(() => PlayerState)
     @Transform(
-        ({ value }) => Object.fromEntries(
-            Array.from((value as Map<string, PlayerState>).entries()).map(([uuid, playerState]) => [uuid, instanceToPlain(playerState)])
+        ({ value, options }) => Object.fromEntries(
+            Array.from((value as Map<string, PlayerState>).entries()).map(([uuid, playerState]) => [uuid, instanceToPlain(playerState, { ignoreDecorators: options?.ignoreDecorators })])
         ),
         { toPlainOnly: true }
     )
     playerStates: Map<string, PlayerState> = new Map();
     
-    @Exclude()
+    @Exclude({ toPlainOnly: true })
     currentPlayer: string;
 
     constructor() {
@@ -57,6 +65,7 @@ export class GameState extends JsonSerializable {
 
     addPlayer(user: User, ps: PlayerState) {
         let playerUuid = "";
+
         if (!this.users.has(user.uuid)) {
             let playerState = this.playerStates.get(user.uuid);
             if (!playerState) {

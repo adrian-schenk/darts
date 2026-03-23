@@ -25,7 +25,7 @@ export class PlayerState extends JsonSerializable {
     uuid: string;
     gameId: string;
 
-    @Exclude()
+    @Exclude({ toPlainOnly: true })
     userId: number;
 
     state: PlayerActionState;
@@ -53,6 +53,7 @@ export class PlayerState extends JsonSerializable {
     
     @Exclude()      
     protected getFieldName = (id: string) => {
+        if (typeof id !== 'string') return '';
         if (id === 'miss') return 'Miss'
         if (id === 'outer-bull') return 'SB'
         if (id === 'bullseye') return 'Bull'
@@ -65,6 +66,7 @@ export class PlayerState extends JsonSerializable {
 
     @Exclude()
     protected getFieldScore = (id: string) => {
+        if (typeof id !== 'string') return 0;
         if (id === 'miss') return 0
         if (id === 'outer-bull') return 25
         if (id === 'bullseye') return 50
