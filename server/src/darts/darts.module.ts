@@ -1,6 +1,6 @@
 import { forwardRef, Module } from "@nestjs/common";
 import { MongooseModule } from '@nestjs/mongoose';
-import { GameEntity, GameEntitySchema } from './game/game.entity';
+import { GameEntity, GameEntitySchema } from './game/entities/game.entity';
 import DartsService from "./darts.service";
 import DartsGameService from "./game/game.service";
 import DartsEventService from "./darts_event/dartsevent.service";

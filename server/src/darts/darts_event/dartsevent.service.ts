@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import DartsGameService from "../game/game.service";
 import { Socket } from "socket.io";
-import { GameEntity } from "../game/game.entity";
+import { GameEntity } from "../game/entities/game.entity";
 import { Model } from "mongoose";
 import { InjectModel } from "@nestjs/mongoose/dist/common/mongoose.decorators";
 import { User } from "src/users/user.entity";

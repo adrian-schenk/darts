@@ -3,7 +3,7 @@ import { ApiService, Checkout } from './api.service';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { Public } from 'src/auth/public.decorator';
 import DartsGameService from 'src/darts/game/game.service';
-import { GameEntity } from 'src/darts/game/game.entity';
+import { GameEntity } from 'src/darts/game/entities/game.entity';
 import MatchmakingService from 'src/darts/matchmaking/mm.service';
 
 @UseGuards(JwtAuthGuard)

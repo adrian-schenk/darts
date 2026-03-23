@@ -1,5 +1,5 @@
 import { Model } from "mongoose";
-import { GameEntity } from "./game.entity";
+import { GameEntity } from "./entities/game.entity";
 import { GameState } from "./gameState";
 import { InjectModel } from "@nestjs/mongoose/dist/common/mongoose.decorators";
 

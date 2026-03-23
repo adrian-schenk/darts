@@ -1,5 +1,5 @@
 import { classToPlain, Exclude, instanceToPlain } from "class-transformer";
-import { GameEntity } from "./game.entity";
+import { GameEntity } from "./entities/game.entity";
 import JsonSerializable from "src/util/JsonSerializable";
 import { DartsCheckoutLogicService } from "../logic/checkout.service";
 import { v4 as uuidv4 } from "uuid";

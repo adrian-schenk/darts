@@ -3,7 +3,7 @@ import { ConsoleLogger, Injectable } from "@nestjs/common";
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import ConnectionsService from "src/ws/connections.service";
-import { GameEntity, GameEntitySchema } from "./game.entity";
+import { GameEntity, GameEntitySchema } from "./entities/game.entity";
 import { User } from "src/users/user.entity";
 import { Socket } from "socket.io";
 import PlayerState, { CheckoutPlayerState, DefaultPlayerState, TargetPlayerState } from "./playerState";

@@ -1,5 +1,5 @@
 import { Exclude, Transform, Type, instanceToPlain } from "class-transformer";
-import { GameEntity } from "./game.entity";
+import { GameEntity } from "./entities/game.entity";
 import { PlayerState } from "./playerState";
 import { User } from "src/users/user.entity";
 import JsonSerializable from "src/util/JsonSerializable";
