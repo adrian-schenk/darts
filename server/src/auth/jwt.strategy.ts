@@ -8,10 +8,12 @@ import { User } from '../users/user.entity';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-
   private secret: string;
 
-  constructor(private usersService: UsersService, private jwtService: JwtService) {
+  constructor(
+    private usersService: UsersService,
+    private jwtService: JwtService,
+  ) {
     const secret = process.env.JWT_SECRET ?? 'dev-only-secret-change-me';
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -34,9 +36,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validateToken(token: string): Promise<User> {
     try {
-      const payload = await this.jwtService.verifyAsync(token, {
+      const payload = (await this.jwtService.verifyAsync(token, {
         secret: this.secret,
-      }) as JwtPayload;
+      })) as JwtPayload;
       return await this.validate(payload);
     } catch (err) {
       throw new UnauthorizedException('Invalid token');

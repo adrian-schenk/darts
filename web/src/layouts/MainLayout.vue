@@ -2,12 +2,11 @@
 import { useRoute } from 'vue-router'
 import Navigation from '@/components/Navigation.vue'
 
-import useSocket from "@/lib/socket.ts";
+import useSocket from '@/lib/socket.ts'
 
 const route = useRoute()
 
 useSocket()
-
 </script>
 
 <template>

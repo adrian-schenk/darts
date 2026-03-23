@@ -1,4 +1,15 @@
-import { Controller, Get, Param, Query, ParseIntPipe, HttpException, HttpStatus, UseGuards, Post, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Query,
+  ParseIntPipe,
+  HttpException,
+  HttpStatus,
+  UseGuards,
+  Post,
+  Req,
+} from '@nestjs/common';
 import { ApiService, Checkout } from './api.service';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { Public } from 'src/auth/public.decorator';
@@ -9,7 +20,11 @@ import MatchmakingService from 'src/darts/matchmaking/mm.service';
 @UseGuards(JwtAuthGuard)
 @Controller('api')
 export class ApiController {
-  constructor(private readonly apiService: ApiService, private readonly dartsGameService: DartsGameService, private readonly matchmakingService: MatchmakingService) {}
+  constructor(
+    private readonly apiService: ApiService,
+    private readonly dartsGameService: DartsGameService,
+    private readonly matchmakingService: MatchmakingService,
+  ) {}
 
   @Public()
   @Get('/test')
@@ -22,7 +37,12 @@ export class ApiController {
     @Param('score', ParseIntPipe) score: number,
     @Query('throwsLeft') throwsLeft?: string,
     @Query('doubleOut') doubleOut?: string,
-  ): { score: number; throwsLeft: number; doubleOut: boolean; checkouts: Checkout[] } {
+  ): {
+    score: number;
+    throwsLeft: number;
+    doubleOut: boolean;
+    checkouts: Checkout[];
+  } {
     // Parse query parameters with defaults
     const parsedThrowsLeft = throwsLeft ? parseInt(throwsLeft, 10) : 3;
     const parsedDoubleOut = doubleOut === 'false' ? false : true; // Default to true
@@ -58,7 +78,6 @@ export class ApiController {
 
   @Post('/create-training/:mode')
   async createTraining(@Param('mode') mode: string, @Req() req) {
-    
     const validModes = ['target', 'around', 'checkouts', 'max'];
     if (!validModes.includes(mode)) {
       throw new HttpException(
@@ -67,18 +86,22 @@ export class ApiController {
       );
     }
 
-    const game: GameEntity = await this.dartsGameService.createTraining(req.user, mode);
-    
+    const game: GameEntity = await this.dartsGameService.createTraining(
+      req.user,
+      mode,
+    );
+
     return { gameId: game.gameId, mode };
   }
 
   @Get('/game/:gameId')
   async getGame(@Param('gameId') gameId: string) {
-    const game: GameEntity| null = await this.dartsGameService.getDartGame(gameId);
+    const game: GameEntity | null =
+      await this.dartsGameService.getDartGame(gameId);
     if (!game) {
       throw new HttpException('Game not found', HttpStatus.NOT_FOUND);
     }
-    
+
     const { teamPlayers, mode, status, createdAt, updatedAt } = game;
     return { gameId, teamPlayers, mode, status, createdAt, updatedAt };
   }

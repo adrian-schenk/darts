@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable } from '@nestjs/common';
 
 export interface DartScore {
   value: number;
@@ -73,7 +73,9 @@ export class ApiService {
     });
 
     // Sort by total score descending for optimization
-    this.validScores.sort((a, b) => b.value * b.multiplier - a.value * a.multiplier);
+    this.validScores.sort(
+      (a, b) => b.value * b.multiplier - a.value * a.multiplier,
+    );
   }
 
   public findCheckouts(
@@ -82,7 +84,7 @@ export class ApiService {
     requireDoubleOut: boolean = true,
   ): Checkout[] {
     const checkouts: Checkout[] = [];
-    
+
     if (score <= 0 || score > 180 * throwsLeft) {
       return checkouts;
     }
@@ -110,7 +112,10 @@ export class ApiService {
       if (remainingScore === 0) {
         results.push({
           darts: [...currentDarts],
-          total: currentDarts.reduce((sum, dart) => sum + dart.value * dart.multiplier, 0),
+          total: currentDarts.reduce(
+            (sum, dart) => sum + dart.value * dart.multiplier,
+            0,
+          ),
         });
       }
       return;
@@ -120,7 +125,10 @@ export class ApiService {
     if (remainingScore === 0) {
       results.push({
         darts: [...currentDarts],
-        total: currentDarts.reduce((sum, dart) => sum + dart.value * dart.multiplier, 0),
+        total: currentDarts.reduce(
+          (sum, dart) => sum + dart.value * dart.multiplier,
+          0,
+        ),
       });
       return;
     }
@@ -128,7 +136,7 @@ export class ApiService {
     // Try each possible dart score
     for (const dart of this.validScores) {
       const dartTotal = dart.value * dart.multiplier;
-      
+
       // Skip if this dart would bust (go below 0)
       if (dartTotal > remainingScore) {
         continue;

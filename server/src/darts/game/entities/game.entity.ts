@@ -4,14 +4,13 @@ import { v4 as uuidv4 } from 'uuid';
 
 @Schema()
 export class GameEntity extends Document {
-
   @Prop({ default: uuidv4, unique: true })
   gameId: string;
 
   @Prop({ required: true })
   playerIds: string[];
 
-  @Prop({ required: false, type: Object})
+  @Prop({ required: false, type: Object })
   teamPlayers: { [team: string]: string[] };
 
   @Prop({ required: true })

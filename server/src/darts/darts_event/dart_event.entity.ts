@@ -4,11 +4,10 @@ import { v4 as uuidv4 } from 'uuid';
 
 @Schema()
 export class DartEventEntity extends Document {
-
   @Prop({ type: String, required: true })
   gameId: string;
 
-  @Prop({ required: true }) 
+  @Prop({ required: true })
   user: number;
 
   @Prop({ required: true })
@@ -24,4 +23,5 @@ export class DartEventEntity extends Document {
   updatedAt?: Date;
 }
 
-export const DartEventEntitySchema = SchemaFactory.createForClass(DartEventEntity);
+export const DartEventEntitySchema =
+  SchemaFactory.createForClass(DartEventEntity);

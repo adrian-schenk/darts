@@ -1,5 +1,7 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4">
+  <div
+    class="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4"
+  >
     <div class="w-full max-w-md">
       <!-- Logo Section -->
       <div class="text-center mb-8">
@@ -89,30 +91,37 @@ const router = useRouter()
 const form = ref({
   username: '',
   password: '',
-  rememberMe: false
+  rememberMe: false,
 })
 
 const handleLogin = () => {
-  fetch(`http://${import.meta.env.VITE_BACKEND_URL}:${import.meta.env.VITE_BACKEND_PORT}/auth/login`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
+  fetch(
+    `http://${import.meta.env.VITE_BACKEND_URL}:${import.meta.env.VITE_BACKEND_PORT}/auth/login`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(form.value),
     },
-    body: JSON.stringify(form.value)
-  })
-    .then(res => {
+  )
+    .then((res) => {
       if (!res.ok) {
-        throw new Error('Login failed');
+        throw new Error('Login failed')
       }
 
-      return res.json();
+      return res.json()
     })
-    .then(token => {
-      Cookies.set('auth_token', token.access_token, { expires: form.value.rememberMe ? 7 : undefined, secure: true, sameSite: 'strict' });
-      window.location.href = '/';
+    .then((token) => {
+      Cookies.set('auth_token', token.access_token, {
+        expires: form.value.rememberMe ? 7 : undefined,
+        secure: true,
+        sameSite: 'strict',
+      })
+      window.location.href = '/'
     })
-    .catch(error => {
-      console.error('Login failed:', error);
-    });
+    .catch((error) => {
+      console.error('Login failed:', error)
+    })
 }
 </script>

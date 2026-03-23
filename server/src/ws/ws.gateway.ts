@@ -1,4 +1,9 @@
-import { WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
+import {
+  WebSocketGateway,
+  WebSocketServer,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+} from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import DartSocketService from './ws.service';
 import { Injectable } from '@nestjs/common';
@@ -7,7 +12,7 @@ import { Injectable } from '@nestjs/common';
   cors: {
     origin: '*',
     credentials: true,
-  }
+  },
 })
 @Injectable()
 export class DartSocket implements OnGatewayConnection, OnGatewayDisconnect {
@@ -20,7 +25,7 @@ export class DartSocket implements OnGatewayConnection, OnGatewayDisconnect {
     const client = this.server.sockets.sockets.get(socketId);
     if (client && client.connected) {
       client.emit('ping');
-      
+
       const pongReceived = await new Promise<boolean>((resolve) => {
         const timeout = setTimeout(() => resolve(false), 2000);
         client.once('pong', () => {

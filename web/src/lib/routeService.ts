@@ -7,7 +7,7 @@ export interface RouteConfig {
 export class RouteServiceError extends Error {
   constructor(
     message: string,
-    public readonly statusCode?: number
+    public readonly statusCode?: number,
   ) {
     super(message)
     this.name = 'RouteServiceError'
@@ -24,25 +24,20 @@ export async function fetchRoutes(): Promise<RouteConfig[]> {
     })
 
     if (!response.ok) {
-      throw new RouteServiceError(
-        `Failed to fetch routes: ${response.statusText}`,
-        response.status
-      )
+      throw new RouteServiceError(`Failed to fetch routes: ${response.statusText}`, response.status)
     }
 
     const data = await response.json()
 
     if (!Array.isArray(data)) {
-      throw new RouteServiceError(
-        'Invalid response format: expected an array of routes'
-      )
+      throw new RouteServiceError('Invalid response format: expected an array of routes')
     }
 
     // Validate route structure
     data.forEach((route, index) => {
       if (!route.path || !route.component) {
         throw new RouteServiceError(
-          `Invalid route at index ${index}: missing required fields (path, component)`
+          `Invalid route at index ${index}: missing required fields (path, component)`,
         )
       }
     })
@@ -62,7 +57,7 @@ export async function fetchRoutes(): Promise<RouteConfig[]> {
     }
 
     throw new RouteServiceError(
-      error instanceof Error ? error.message : 'Unknown error occurred while fetching routes'
+      error instanceof Error ? error.message : 'Unknown error occurred while fetching routes',
     )
   }
 }

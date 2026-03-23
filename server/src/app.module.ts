@@ -30,7 +30,10 @@ dotenv.config({ path: join(__dirname, '..', '.env') });
       autoLoadEntities: true,
       synchronize: true,
     }),
-    MongooseModule.forRoot(process.env.MONGO_URI || `mongodb://${process.env.MONGO_USERNAME}:${process.env.MONGO_PASSWORD}@localhost:${process.env.MONGO_PORT}/${process.env.MONGO_DATABASE}?authSource=admin`),
+    MongooseModule.forRoot(
+      process.env.MONGO_URI ||
+        `mongodb://${process.env.MONGO_USERNAME}:${process.env.MONGO_PASSWORD}@localhost:${process.env.MONGO_PORT}/${process.env.MONGO_DATABASE}?authSource=admin`,
+    ),
     RedisModule.forRoot({
       type: 'single',
       url: 'redis://localhost:6379',
@@ -38,7 +41,7 @@ dotenv.config({ path: join(__dirname, '..', '.env') });
     UsersModule,
     ApiModule,
     AuthModule,
-    WsModule
+    WsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

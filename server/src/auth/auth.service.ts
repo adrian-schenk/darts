@@ -26,9 +26,11 @@ export class AuthService {
     const username = registerDto.username?.trim();
     const email = registerDto.email?.trim().toLowerCase();
     const password = registerDto.password;
-    
+
     if (!username || !email || !password) {
-      throw new BadRequestException('username, email and password are required');
+      throw new BadRequestException(
+        'username, email and password are required',
+      );
     }
 
     if (await this.usersService.findByUsername(username)) {
@@ -38,7 +40,11 @@ export class AuthService {
       throw new BadRequestException('email already exists');
     }
     const passwordHash = AuthService.hashPassword(password);
-    const createdUser = await this.usersService.create(username, email, passwordHash);
+    const createdUser = await this.usersService.create(
+      username,
+      email,
+      passwordHash,
+    );
     return createdUser ? true : false;
   }
 
@@ -64,7 +70,9 @@ export class AuthService {
     return this.issueToken(user, savedToken.id);
   }
 
-  async getProfile(userId: string): Promise<{ id: string; username: string; email: string }> {
+  async getProfile(
+    userId: string,
+  ): Promise<{ id: string; username: string; email: string }> {
     const user = await this.usersService.findById(Number(userId));
     if (!user) {
       throw new UnauthorizedException('user not found');

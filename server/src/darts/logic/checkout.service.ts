@@ -1,5 +1,5 @@
-import { Injectable } from "@nestjs/common";
-import { log } from "console";
+import { Injectable } from '@nestjs/common';
+import { log } from 'console';
 
 export interface DartScore {
   value: number;
@@ -22,8 +22,7 @@ export class DartsCheckoutLogicService {
   constructor() {
     this.initializeValidScores();
     for (let score = 2; score <= 170; score++) {
-      if (this.checkoutPossible(score))
-        this.possibleCheckouts[score] = true;
+      if (this.checkoutPossible(score)) this.possibleCheckouts[score] = true;
     }
   }
 
@@ -91,7 +90,9 @@ export class DartsCheckoutLogicService {
     });
 
     // Sort by total score descending for optimization
-    this.validScores.sort((a, b) => b.value * b.multiplier - a.value * a.multiplier);
+    this.validScores.sort(
+      (a, b) => b.value * b.multiplier - a.value * a.multiplier,
+    );
   }
 
   public findCheckouts(
@@ -100,7 +101,7 @@ export class DartsCheckoutLogicService {
     requireDoubleOut: boolean = true,
   ): Checkout[] {
     const checkouts: Checkout[] = [];
-    
+
     if (score <= 0 || score > 180 * throwsLeft) {
       return checkouts;
     }
@@ -128,7 +129,10 @@ export class DartsCheckoutLogicService {
       if (remainingScore === 0) {
         results.push({
           darts: [...currentDarts],
-          total: currentDarts.reduce((sum, dart) => sum + dart.value * dart.multiplier, 0),
+          total: currentDarts.reduce(
+            (sum, dart) => sum + dart.value * dart.multiplier,
+            0,
+          ),
         });
       }
       return;
@@ -138,7 +142,10 @@ export class DartsCheckoutLogicService {
     if (remainingScore === 0) {
       results.push({
         darts: [...currentDarts],
-        total: currentDarts.reduce((sum, dart) => sum + dart.value * dart.multiplier, 0),
+        total: currentDarts.reduce(
+          (sum, dart) => sum + dart.value * dart.multiplier,
+          0,
+        ),
       });
       return;
     }
@@ -146,7 +153,7 @@ export class DartsCheckoutLogicService {
     // Try each possible dart score
     for (const dart of this.validScores) {
       const dartTotal = dart.value * dart.multiplier;
-      
+
       // Skip if this dart would bust (go below 0)
       if (dartTotal > remainingScore) {
         continue;

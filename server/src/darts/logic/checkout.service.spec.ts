@@ -5,7 +5,7 @@ describe('DartsCheckoutLogicService', () => {
 
   it('possible checkouts should not contain 163', () => {
     expect(service.possibleCheckouts[163]).toBeUndefined();
-  })
+  });
 
   it('should return possible checkouts for 170 with 3 darts', () => {
     const checkouts = service.findCheckouts(170, 3);
@@ -20,12 +20,16 @@ describe('DartsCheckoutLogicService', () => {
 
   it('should require double out by default', () => {
     const checkouts = service.findCheckouts(40, 3);
-    expect(checkouts.some(c => c.darts[c.darts.length - 1].isDouble)).toBe(true);
+    expect(checkouts.some((c) => c.darts[c.darts.length - 1].isDouble)).toBe(
+      true,
+    );
   });
 
   it('should allow single out if requireDoubleOut is false', () => {
     const checkouts = service.findCheckouts(40, 3, false);
-    expect(checkouts.some(c => !c.darts[c.darts.length - 1].isDouble)).toBe(true);
+    expect(checkouts.some((c) => !c.darts[c.darts.length - 1].isDouble)).toBe(
+      true,
+    );
   });
 
   it('should return checkouts for 60 with 2 darts', () => {

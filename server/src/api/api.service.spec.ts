@@ -67,10 +67,10 @@ describe('ApiService', () => {
     it('should respect throwsLeft parameter', () => {
       const checkouts1 = service.findCheckouts(100, 1, true);
       const checkouts2 = service.findCheckouts(100, 2, true);
-      
+
       // With only 1 throw, 100 is not possible
       expect(checkouts1.length).toBe(0);
-      
+
       // With 2 throws, 100 should be possible
       expect(checkouts2.length).toBeGreaterThan(0);
     });
