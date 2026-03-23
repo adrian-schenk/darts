@@ -9,31 +9,14 @@
 					class="block mt-2 text-sm text-blue-400 hover:text-blue-300">Go to {{ m.label }}</button>
 			</div>
 		</div>
-		<div v-if="mode == 'target'" class="w-full mx-auto">
-			<div class="flex flex-row gap-4 w-full h-full">
-				<Player ref="PlayerRef" class="flex-auto h-auto w-full" :show-name="false" :show-sets="false"
-					:show-avg="false" :show-history="false" :dart-board-ref="DartboardRef ?? undefined">
+		<div v-if="mode" class="w-full mx-auto">
+			<div v-for="[playeruuid, player] of players" :key="playeruuid" class="flex flex-row gap-4 w-full h-full">
+				<Player class="flex-auto h-auto w-full" :ref="getPlayerRefSetter(playeruuid)" :v-bind:player="player":show-name="true" :show-sets="true" :show-avg="true"
+					:show-history="true" :dart-board-ref="dartboardRefs.get(playeruuid) ?? undefined" :uuid="playeruuid">
 				</Player>
 				<div class="h-24 border-l border-gray-600 mx-4 self-center"></div>
-				<Dartboard ref="DartboardRef" class="w-full flex-auto" :click-to-add-marker="true"></Dartboard>
-			</div>
-		</div>
-		<div v-if="mode == 'checkouts'" class="mx-auto">
-			<div class="flex flex-row gap-4 w-full h-full">
-				<Player ref="PlayerRef" class="flex-auto h-auto w-full" :show-name="false" :show-sets="false"
-					:show-avg="false" :show-history="false" :dart-board-ref="DartboardRef ?? undefined">
-					<div class="absolute top-0 mt-8 flex flex-row gap-4">
-						<button v-for="difficulty in checkoutDifficulties" :key="difficulty.value" type="button"
-							@click="trainingStore.checkoutDifficulty = difficulty.value"
-							@focus="trainingStore.checkoutDifficulty = difficulty.value"
-							:class="['px-3 py-1 rounded-full text-sm font-semibold border transition-colors cursor-pointer', getDifficultyClass(difficulty.value)]">
-							{{ difficulty.label }}
-						</button>
-					</div>
-				</Player>
-				<div class="h-24 border-l border-gray-600 mx-4 self-center"></div>
-				<Dartboard ref="DartboardRef" class="flex-auto w-full" :click-to-add-marker="true"
-					:-player-interface="PlayerRef?.PlayerInterface"></Dartboard>
+				<Dartboard :ref="getDartboardRefSetter(playeruuid)" class="flex-auto w-full" :click-to-add-marker="true"
+					:player-interface="playerRefs.get(playeruuid)?.PlayerInterface ?? undefined"></Dartboard>
 			</div>
 		</div>
 
@@ -44,24 +27,55 @@
 <script setup lang="ts">
 import Dartboard from '@/components/Dartboard.vue';
 import Player from '@/components/Player.vue';
-import Separator from '@/components/ui/separator/Separator.vue';
 import getBearer from '@/lib/auth';
 import useSocket from '@/lib/socket';
 import router from '@/router';
 import { useTrainingStore } from '@/stores/training/TrainingStore';
-import { Router } from 'lucide-vue-next';
-import { resolve } from 'path';
-import { onMounted, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { onMounted, ref } from 'vue';
 
 const trainingStore = useTrainingStore()
 
 let { socket, status, data, send, close } = useSocket();
 
-const PlayerRef = ref<InstanceType<typeof Player> | null>(null);
-const DartboardRef = ref<InstanceType<typeof Dartboard> | null>(null);
 const props = defineProps<{ gameId?: string }>()
 const mode = ref('');
+
+const localPlayer = ref<any>(null);
+const players = ref<Map<string, any>>(new Map());
+const playerRefs = ref<Map<string, InstanceType<typeof Player> | null>>(new Map());
+const dartboardRefs = ref<Map<string, InstanceType<typeof Dartboard> | null>>(new Map());
+const playerRefSetters = new Map<string, (el: unknown) => void>();
+const dartboardRefSetters = new Map<string, (el: unknown) => void>();
+
+const setPlayerRef = (playerUuid: string, el: unknown) => {
+	const nextRef = (el as InstanceType<typeof Player>) ?? null;
+	if (playerRefs.value.get(playerUuid) === nextRef) {
+		return;
+	}
+	playerRefs.value.set(playerUuid, nextRef);
+}
+
+const setDartboardRef = (playerUuid: string, el: unknown) => {
+	const nextRef = (el as InstanceType<typeof Dartboard>) ?? null;
+	if (dartboardRefs.value.get(playerUuid) === nextRef) {
+		return;
+	}
+	dartboardRefs.value.set(playerUuid, nextRef);
+}
+
+const getPlayerRefSetter = (playerUuid: string) => {
+	if (!playerRefSetters.has(playerUuid)) {
+		playerRefSetters.set(playerUuid, (el: unknown) => setPlayerRef(playerUuid, el));
+	}
+	return playerRefSetters.get(playerUuid)!;
+}
+
+const getDartboardRefSetter = (playerUuid: string) => {
+	if (!dartboardRefSetters.has(playerUuid)) {
+		dartboardRefSetters.set(playerUuid, (el: unknown) => setDartboardRef(playerUuid, el));
+	}
+	return dartboardRefSetters.get(playerUuid)!;
+}
 
 onMounted(() => {
 	if (props.gameId) {
@@ -69,33 +83,40 @@ onMounted(() => {
 			method: 'GET',
 			headers: { 'Authorization': getBearer(), 'Content-Type': 'application/json' },
 		})
-		.then(res => res.json())
-		.then(async data => {
-			if (data.gameId) {
-				if (data.mode) {
-					mode.value = data.mode
-				}
-			}
-
-			send("join-game", { gameId: props.gameId });
-
-			await new Promise(resolve => {
-				setTimeout(resolve, 2000);
-				socket.once('join-game', (data: any) => {
-					if (data.success) {
-						resolve(null);
-					} else {
-						router.replace('/training');
-						resolve(null);
+			.then(res => res.json())
+			.then(async data => {
+				if (data.gameId) {
+					if (data.mode) {
+						mode.value = data.mode
 					}
-				});
-			});
+				}
 
-			//send("sync-game", { gameId: props.gameId });
-		})
-		.catch(err => {
-			console.error('Error fetching game data:', err);
-		});
+				send("join-game", { gameId: props.gameId });
+
+				await new Promise(resolve => {
+					setTimeout(resolve, 2000);
+					socket.once('join-game', (data: any) => {
+						if (data.success) {
+							localPlayer.value = data.playerId;
+							resolve(null);
+						} else {
+							router.replace('/training');
+							resolve(null);
+						}
+					});
+				});
+
+				socket.on('game-update', (gameState: any) => {
+					for (const player of Object.values(gameState.playerStates)) {
+						players.value.set((player as any).uuid, player);
+					}
+				})
+
+				send("sync-game", { gameId: props.gameId });
+			})
+			.catch(err => {
+				console.error('Error fetching game data:', err);
+			});
 
 	}
 })

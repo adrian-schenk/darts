@@ -9,7 +9,9 @@ abstract class JsonSerializable {
     }
 
     toRealJSON() {
-        return JSON.stringify(this);
+        return JSON.stringify(
+            instanceToPlain(this, { ignoreDecorators: true })
+        );
     }
 }
 

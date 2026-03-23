@@ -32,7 +32,7 @@
             </div>
           </template>
         </div>
-      <template v-if="PlayerInterface.state.value === PlayerState.REMOVE_DARTS">
+      <template v-if="PlayerInterface.state.value === PlayerActionState.REMOVE_DARTS">
         <div class="absolute bg-slate-700/80 top-1/2 -translate-y-1/2 w-full h-24 flex flex-col items-center justify-center"><p class="text-yellow-500 font-bold">Removing darts</p></div>
       </template>
     </div>
@@ -71,8 +71,8 @@
 </template>
 
 <script setup lang="ts">
-import { watch } from "vue";
-import {DartPlayer, PlayerState} from "@/lib/dartPlayer.ts";
+import { onBeforeUnmount, watch } from "vue";
+import {DartPlayer, PlayerActionState} from "@/lib/dartPlayer.ts";
 import type { Throw } from "@/lib/dart";
 
 const props = defineProps({
@@ -81,10 +81,12 @@ const props = defineProps({
   showAvg: { type: Boolean, default: true },
   showHistory: { type: Boolean, default: true },
   initialScore: { type: Number, default: 501 },
+  uuid: { type: String, default: '' },
   dartBoardRef: { type: Object, default: null }
 })
 
 const PlayerInterface = new DartPlayer({
+  uuid: props.uuid,
   name: '',
   initialScore: props.initialScore,
   dartboardRef: props.dartBoardRef
@@ -93,6 +95,15 @@ const PlayerInterface = new DartPlayer({
 watch(() => props.dartBoardRef, (dartBoardRef) => {
   PlayerInterface.boardRef = dartBoardRef
 }, { immediate: true })
+
+watch(() => props.uuid, (uuid) => {
+  PlayerInterface.uuid = uuid
+  PlayerInterface.info.uuid = uuid
+}, { immediate: true })
+
+onBeforeUnmount(() => {
+  PlayerInterface.dispose()
+})
 
 defineExpose({
   PlayerInterface

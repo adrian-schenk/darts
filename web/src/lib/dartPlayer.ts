@@ -1,4 +1,4 @@
-import {ref, watch} from "vue";
+import { ref } from "vue";
 import type {Throw} from "@/lib/dart.ts";
 import useSocket from "./socket";
 
@@ -7,13 +7,15 @@ export enum CountingMode {
   ADD
 }
 
-export enum PlayerState {
+export enum PlayerActionState {
+  IDLE,
   THROW_DARTS,
   REMOVE_DARTS,
   TIMEOUT
 }
 
 export interface DartPlayerInfo {
+  uuid: string,
   name: string,
   initialScore: number,
   countingMode?: CountingMode,
@@ -30,6 +32,8 @@ export interface DartPlayerInfo {
 }
 
 export class DartPlayer {
+
+  uuid: string;
 
   boardRef: any = null
 
@@ -49,55 +53,75 @@ export class DartPlayer {
 
   scoreLog = ref<Throw[]>([]);
 
-  state = ref<PlayerState>(PlayerState.THROW_DARTS)
+  state = ref<PlayerActionState>(PlayerActionState.THROW_DARTS)
 
   socket: any = null;
-
+  
   constructor(public info: DartPlayerInfo) {
+
+    this.uuid = info.uuid;
+
     const { socket, status, data, send, close } = useSocket();
     this.socket = socket;
 
     if (info.dartboardRef) this.boardRef = info.dartboardRef;
 
-    socket.on('dart-event', (msg: any) => {
-      if (msg.type === 'dart_hit') {
-        const t: Throw = msg.throw;
-        t.score = this.getFieldScore(t.field);
-        t.field = this.getFieldName(t.field);
-        this.addThrow(t)
-      }
-    })
-
-    socket.on('sync-game', (gameState: any) => {
-      if (this.state.value == PlayerState.REMOVE_DARTS && this.state.value != gameState.state && this.boardRef) {
-        this.boardRef?.clearMarkers?.();
-      }
-
-      this.state.value = gameState.state;
-
-      this.score.value = gameState.score;
-      this.throws.value = [
-        { field: "", score: 0 },
-        { field: "", score: 0 },
-        { field: "", score: 0 },
-      ];
-      for (let i = 0; i < gameState.currentThrows.length; i++) {
-        const t = gameState.currentThrows[i];
-        this.throws.value[i] = {
-          field: t.field,
-          score: t.score,
-          invalid: t.invalid
-        }
-      }
-
-      this.checkoutCombination.value = gameState.checkoutCombination;
-    })
+    socket.on('dart-event', this.handleDartEvent)
+    socket.on('player-event', this.handlePlayerEvent)
 
   }
 
-  addThrow(t: Throw) {
-    const board = this.boardRef
+  private readonly handleDartEvent = (msg: any) => {
+    if (msg.type === 'dart_hit') {
+      const t: Throw = msg.throw;
+      t.score = this.getFieldScore(t.field);
+      t.field = this.getFieldName(t.field);
+      this.addThrow(t)
+    }
+  }
 
+  private readonly handlePlayerEvent = (gameState: any) => {
+    const playerGameState = gameState.playerStates?.[this.uuid] ?? gameState;
+    const board = this.getBoard();
+    if (this.state.value == PlayerActionState.REMOVE_DARTS && this.state.value != playerGameState.state && board) {
+      board.clearMarkers?.();
+    }
+
+    this.state.value = playerGameState.state;
+
+    this.score.value = playerGameState.score;
+    this.throws.value = [
+      { field: "", score: 0 },
+      { field: "", score: 0 },
+      { field: "", score: 0 },
+    ];
+    for (let i = 0; i < playerGameState.currentThrows.length; i++) {
+      const t = playerGameState.currentThrows[i];
+      this.throws.value[i] = {
+        field: t.field,
+        score: t.score,
+        invalid: t.invalid
+      }
+    }
+
+    this.checkoutCombination.value = playerGameState.checkoutCombination;
+  }
+
+  private getBoard() {
+    if (!this.boardRef) return null;
+    if (typeof this.boardRef === 'object' && 'value' in this.boardRef) {
+      return this.boardRef.value ?? null;
+    }
+    return this.boardRef;
+  }
+
+  dispose() {
+    this.socket?.off?.('dart-event', this.handleDartEvent)
+    this.socket?.off?.('player-event', this.handlePlayerEvent)
+  }
+
+  addThrow(t: Throw) {
+    const board = this.getBoard();
     if (board && typeof board.addHitMarker === 'function') {
       board.addHitMarker(t.x, t.y)
     }
@@ -123,7 +147,7 @@ export class DartPlayer {
     if (id === 'outer-bull') return 25
     if (id === 'bullseye') return 50
     const [type, numStr] = id.replace(/-inner|-outer/, '').split('-')
-    const num = parseInt(numStr)
+    const num = parseInt(numStr ?? '0')
     if (type === 'single') return num
     if (type === 'double') return num * 2
     if (type === 'triple') return num * 3

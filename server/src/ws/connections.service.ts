@@ -31,6 +31,7 @@ export default class ConnectionsService {
             }
             console.log(`Authenticated user ${user.username} (${user.id}) connected with socket ${client.id}`);
             client.data.user = user;
+            client.data.userId = user.id;
         } catch (err) {
             console.error(`Authentication error for client ${client.id}:`, err);
             client.emit('error', { message: 'Unauthorized', status: 401 });

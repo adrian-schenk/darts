@@ -27,7 +27,7 @@ export class GameEntity extends Document {
   updatedAt?: Date;
 
   @Prop()
-  owner: string;
+  owner: number;
 }
 
 export const GameEntitySchema = SchemaFactory.createForClass(GameEntity);

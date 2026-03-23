@@ -4,6 +4,7 @@ import { Socket } from "socket.io";
 import { GameEntity } from "../game/game.entity";
 import { Model } from "mongoose";
 import { InjectModel } from "@nestjs/mongoose/dist/common/mongoose.decorators";
+import { User } from "src/users/user.entity";
 
 @Injectable()
 export default class DartsEventService {
@@ -18,20 +19,22 @@ export default class DartsEventService {
 
         let gameState = await this.gameService.getGameState(socket.data.gameId);
 
-        if (!gameState) return;
+        if (!gameState || socket.data.user.id != gameState.playerStates.get(gameState.currentPlayer)?.userId) return;
         switch (msg.type) {
             case 'dart_hit':
-                gameState.onDartHit(msg.throw);
+                gameState.onDartHit(socket.data.user, msg.throw);
                 break;
             case 'dart_remove':
-                gameState.onDartRemove();
+                gameState.onDartRemove(socket.data.user);
                 break;
             default:
                 console.warn('Unknown dart event type:', msg.type);
                 break;
         }
 
-        this.gameService.broadcast(socket.data.gameId, 'sync-game', gameState);
+        this.gameService.setGameState(socket.data.gameId, gameState);
+
+        this.gameService.broadcast(socket.data.gameId, 'player-event', gameState);
         this.gameService.broadcast(socket.data.gameId, 'dart-event', msg);
     }
 

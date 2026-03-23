@@ -87,16 +87,16 @@
         <div class="score-main">{{ getSegmentInfo(activeSegment).score }}</div>
       </div>
     </div>
-    <div v-if="PlayerInterface?.state.value == PlayerState.REMOVE_DARTS" class="absolute bg-slate-700/80 w-full h-full flex flex-col items-center justify-center top-0 left-0">
-        <button @click="PlayerInterface && (PlayerInterface.endTurn())" class="text-2xl cursor-pointer border-2 rounded-full px-3 py-1 border-yellow-600 text-white font-bold hover:bg-yellow-600">Removed darts</button>
+    <div v-if="props.playerInterface?.state.value == PlayerActionState.REMOVE_DARTS" class="absolute bg-slate-700/80 w-full h-full flex flex-col items-center justify-center top-0 left-0">
+      <button @click="props.playerInterface && (props.playerInterface.endTurn())" class="text-2xl cursor-pointer border-2 rounded-full px-3 py-1 border-yellow-600 text-white font-bold hover:bg-yellow-600">Removed darts</button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { DartPlayer, PlayerState } from '@/lib/dartPlayer'
+import { DartPlayer, PlayerActionState } from '@/lib/dartPlayer'
 import useSocket from '@/lib/socket'
-import { ref, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 
 let { socket, status, data, send, close } = useSocket()
 
@@ -104,7 +104,7 @@ const props = defineProps({
   clickToAddMarker: { type: Boolean, default: false },
   showScore: { type: Boolean, default: true },
   manualInput: { type: Boolean, default: true },
-  PlayerInterface: { type: DartPlayer, default: null },
+  playerInterface: { type: DartPlayer, default: null },
 })
 
 const svgRef = ref<SVGSVGElement | null>(null)
@@ -184,7 +184,7 @@ const getSegmentInfo = (s: string) => {
   if (s === 'bullseye') return { name: 'BULLSEYE', score: 50 }
   if (s === 'outer-bull') return { name: 'OUTER BULL', score: 25 }
   const match = s.match(/-(\d+)/)
-  const idx = match ? parseInt(match[1]) : 0
+  const idx = match ? parseInt(match[1] ?? '0') : 0
   const num = idx
   const mult = s.includes('double') ? 2 : s.includes('triple') ? 3 : 1
   return { name: `${s.includes('double') ? 'DOUBLE' : s.includes('triple') ? 'TRIPLE' : 'SINGLE'} ${num}`, score: num * mult }

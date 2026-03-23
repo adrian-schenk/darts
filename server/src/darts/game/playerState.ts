@@ -2,10 +2,13 @@ import { classToPlain, Exclude, instanceToPlain } from "class-transformer";
 import { GameEntity } from "./game.entity";
 import JsonSerializable from "src/util/JsonSerializable";
 import { DartsCheckoutLogicService } from "../logic/checkout.service";
+import { v4 as uuidv4 } from "uuid";
+import { User } from "src/users/user.entity";
 
 const checkoutLogic: DartsCheckoutLogicService = new DartsCheckoutLogicService();
 
-export enum PlayerState {
+export enum PlayerActionState {
+  IDLE,
   THROW_DARTS,
   REMOVE_DARTS,
   TIMEOUT
@@ -18,23 +21,26 @@ enum PracticeDifficulty {
     AUTO = 'auto'
 }
 
-export class GameState extends JsonSerializable {
+export class PlayerState extends JsonSerializable {
+    uuid: string;
     gameId: string;
-    mode: string;
 
     @Exclude()
-    status: string;
+    userId: number;
 
-    state: PlayerState;
+    state: PlayerActionState;
 
-    currentThrows: any[] = new Array();
-
-    constructor(game: GameEntity) {
+    constructor() {
         super();
-        this.gameId = game.gameId;
-        this.mode = game.mode;
-        this.status = game.status;
-        this.state = PlayerState.THROW_DARTS;
+        this.uuid = uuidv4();
+        this.state = PlayerActionState.IDLE;
+    }
+
+    static create(user: User, gameId: string): PlayerState {
+        let state = new PlayerState();
+        state.userId = user.id;
+        state.gameId = gameId;
+        return state;
     }
 
     public onDartHit(throwInfo: any) {
@@ -42,8 +48,7 @@ export class GameState extends JsonSerializable {
     }
 
     public onDartRemove() {
-        this.currentThrows = [];
-        this.state = PlayerState.THROW_DARTS;
+        this.state = PlayerActionState.THROW_DARTS;
     }
     
     @Exclude()      
@@ -73,9 +78,10 @@ export class GameState extends JsonSerializable {
     
 }
 
-export class DefaultGameState extends GameState {
+export class DefaultPlayerState extends PlayerState {
 
     score: number = 501;
+    @Exclude()
     saveScore: number = this.score;
     checkoutCombination: any[] = new Array();
 
@@ -85,8 +91,17 @@ export class DefaultGameState extends GameState {
     @Exclude()
     doubleOut = true;
 
-    constructor(game: GameEntity) {
-        super(game);
+    currentThrows: any[] = new Array();
+
+    constructor() {
+        super();
+    }
+
+    static create(user: User, gameId: string): PlayerState {
+        let state = new DefaultPlayerState();
+        state.userId = user.id;
+        state.gameId = gameId;
+        return state;
     }
 
     public onDartHit(throwInfo: any): void {
@@ -101,19 +116,19 @@ export class DefaultGameState extends GameState {
             this.currentThrows.at(-1)!.invalid = true;
             this.checkoutCombination = [];
             this.setScore(this.saveScore);
-            this.state = PlayerState.REMOVE_DARTS;
+            this.state = PlayerActionState.REMOVE_DARTS;
             return;
         }
 
         if (this.currentThrows.length >= this.throwsPerTurn) {
             this.saveScore = this.score;
-            this.state = PlayerState.REMOVE_DARTS;
+            this.state = PlayerActionState.REMOVE_DARTS;
         }
     }
 
     public onDartRemove(): void {
         this.currentThrows = [];
-        this.state = PlayerState.THROW_DARTS;
+        this.state = PlayerActionState.THROW_DARTS;
 
         this.recalculateCheckoutCombination();
     }
@@ -143,29 +158,43 @@ export class DefaultGameState extends GameState {
     }
 }
 
-export class TargetGameState extends GameState {
+export class TargetPlayerState extends PlayerState {
     currentTarget: string;    
 
-    constructor(game: GameEntity) {
-        super(game);
+    constructor() {
+        super();
         this.currentTarget = 'bullseye';
+    }
+
+    static create(user: User, gameId: string): PlayerState {
+        let state = new TargetPlayerState();
+        state.userId = user.id;
+        state.gameId = gameId;
+        return state;
     }
 }
 
-export class CheckoutGameState extends DefaultGameState {
+export class CheckoutPlayerState extends DefaultPlayerState {
 
     difficulty: PracticeDifficulty;
 
-    constructor(game: GameEntity) {
-        super(game);
+    constructor() {
+        super();
         this.setInitialScore(Number(this.getRandomTarget()));
+    }
+
+    static create(user: User, gameId: string): PlayerState {
+        let state = new CheckoutPlayerState();
+        state.userId = user.id;
+        state.gameId = gameId;
+        return state;
     }
 
     public onDartHit(throwInfo: any): void {
         super.onDartHit(throwInfo);        
 
         if (this.score <= 0) {
-            this.state = PlayerState.REMOVE_DARTS;        
+            this.state = PlayerActionState.REMOVE_DARTS;        
         }
     }
 
@@ -203,4 +232,4 @@ export class CheckoutGameState extends DefaultGameState {
 
 }
 
-export default GameState;
+export default PlayerState;

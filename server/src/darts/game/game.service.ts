@@ -3,13 +3,17 @@ import { ConsoleLogger, Injectable } from "@nestjs/common";
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import ConnectionsService from "src/ws/connections.service";
-import { GameEntity } from "./game.entity";
+import { GameEntity, GameEntitySchema } from "./game.entity";
 import { User } from "src/users/user.entity";
 import { Socket } from "socket.io";
-import GameState, { CheckoutGameState, DefaultGameState, TargetGameState } from "./gamestate";
+import PlayerState, { CheckoutPlayerState, DefaultPlayerState, TargetPlayerState } from "./playerState";
 import { InjectRedis } from "@nestjs-modules/ioredis/dist/redis.decorators";
 import Redis from "ioredis/built/Redis";
 import { log } from "console";
+import { GameState } from "./gameState";
+import GameStateFactory from "./gameFactory";
+import PlayerStateFactory from "./stateFactory";
+import { plainToClassFromExist, plainToInstance } from "class-transformer";
 
 @Injectable()
 export default class DartsGameService {
@@ -20,7 +24,9 @@ export default class DartsGameService {
     constructor(
         private connectionsService: ConnectionsService,
         @InjectModel(GameEntity.name) private gameModel: Model<GameEntity>,
-        @InjectRedis() private readonly redis: Redis
+        @InjectRedis() private readonly redis: Redis,
+        private playerStateFactory: PlayerStateFactory,
+        private gameStateFactory: GameStateFactory
     ) {}
 
     async setGameState(gameId: string, state: GameState) {
@@ -29,29 +35,30 @@ export default class DartsGameService {
     }
 
     async getGameState(gameId: string): Promise<GameState | null> {
-        return this.gameStates.get(gameId) || null;
+        if (this.gameStates.has(gameId)) {
+            return this.gameStates.get(gameId) || null;
+        }
+
+        const stateJson = await this.redis.get(`gameState:${gameId}`);
+        if (!stateJson) {
+            return null;
+        }
+        return plainToInstance(GameState, JSON.parse(stateJson || '{}'));
     }
 
     async createTraining(user: User, mode: string) {
-        let res = await this.gameModel.findOne({ owner: String(user.id), mode: mode, createdAt: { $gte: new Date(Date.now() - 12 * 60 * 60 * 1000) } }).exec();
+        let res = await this.gameModel.findOne({ owner: Number(user.id), mode: mode, createdAt: { $gte: new Date(Date.now() - 12 * 60 * 60 * 1000) } }).exec();
         if (!res) {
             const createdGame = new this.gameModel({ playerIds: [], mode, status: 'open', owner: user.id });
             res = await createdGame.save();
         }
 
-        let gameState: GameState;
-        switch (mode) {
-            case 'target':
-                gameState = new TargetGameState(res);
-                break;
-            case 'checkouts':
-                gameState = new CheckoutGameState(res);
-                break;
-            default:
-                gameState = new DefaultGameState(res);
-                break;
+        if (!await this.getGameState(res.gameId)) {
+            let gameState: GameState = await this.gameStateFactory.createGameStateFromMode(mode, res.gameId);
+            gameState.joinable = false;
+
+            await this.setGameState(res.gameId, gameState);
         }
-        await this.setGameState(res.gameId, gameState);
 
         return res;
     }
@@ -74,17 +81,24 @@ export default class DartsGameService {
             socket.emit('join-game', { success: false, message: 'Game not found' });
             return;
         }
-
+        
         if (!this.joinedClients.has(gameId)) {
             this.joinedClients.set(gameId, []);
         }
-        if (await this.userCanJoinGame(gameId, await this.connectionsService.getUserBySocketId(socket.id))) {
+        if (await this.userCanJoinGame(gameId, socket.data.user)) {
+            const gameState = await this.getGameState(gameId);
             this.joinedClients.get(gameId)?.push(socket);
-        }
-        socket.data.gameId = gameId;
 
-        socket.emit('join-game', { success: true });
-        socket.emit('sync-game', await this.getGameState(gameId));
+            let PlayerUuid = gameState?.addPlayer(socket.data.user, await this.playerStateFactory.createPlayerState(socket.data.user, gameId));
+
+            socket.data.gameId = gameId;
+
+            socket.emit('join-game', { success: true, playerId: PlayerUuid });
+            socket.emit('game-update', gameState);
+        } else {
+            socket.emit('join-game', { success: false, message: 'Unable to join game' });
+            return;
+        }
     }
 
     async leaveDartGame(gameId: string, client: Socket) {
@@ -102,13 +116,19 @@ export default class DartsGameService {
             return;
         }
 
-        socket.emit('sync-game', gameState);
+        socket.emit('player-event', gameState);
     }
 
     async userCanJoinGame(gameId: string, user: User | null): Promise<boolean> {
         if (!user) {
             return false;
         }
+
+        let gameState = await this.getGameState(gameId);
+        if (!gameState || (!gameState.joinable && false)) {
+            return false;
+        }
+
         return true; 
     }
 
