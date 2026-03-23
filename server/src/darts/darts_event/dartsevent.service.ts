@@ -5,11 +5,12 @@ import { GameEntity } from "../game/entities/game.entity";
 import { Model } from "mongoose";
 import { InjectModel } from "@nestjs/mongoose/dist/common/mongoose.decorators";
 import { User } from "src/users/user.entity";
+import { DartEventEntity } from "./dart_event.entity";
 
 @Injectable()
 export default class DartsEventService {
  
-    constructor(private readonly gameService: DartsGameService, @InjectModel(GameEntity.name) private gameModel: Model<GameEntity>) { }
+    constructor(private readonly gameService: DartsGameService, @InjectModel(GameEntity.name) private gameModel: Model<GameEntity>, @InjectModel(DartEventEntity.name) private dartEventModel: Model<DartEventEntity>) { }
 
     async handleDartsEvent(socket: Socket, msg: any) {
 
@@ -31,6 +32,16 @@ export default class DartsEventService {
                 break;
         }
 
+        this.dartEventModel.create({
+            gameId: socket.data.gameId,
+            user: socket.data.user.id,
+            type: msg.type,
+            payload: msg,
+            createdAt: new Date(),
+            updatedAt: new Date()
+        })
+
+        // Update game state in memory and Redis
         this.gameService.setGameState(socket.data.gameId, gameState);
 
         this.gameService.broadcast(socket.data.gameId, 'player-event', gameState);
@@ -46,6 +57,10 @@ export default class DartsEventService {
             return game.owner == socket.data.userId;
         });
         return true;
+    }
+
+    async getDartEvents(gameId: string) {
+        return this.dartEventModel.find({ gameId }).sort({ createdAt: 'asc' }).exec();
     }
 
 }
