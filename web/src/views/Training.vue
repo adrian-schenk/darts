@@ -118,6 +118,12 @@ onMounted(() => {
           }
         }
 
+        socket.on('game-update', (gameState: any) => {
+          for (const [uuid, player] of Object.entries(gameState)) {
+            players.value.set(uuid, player)
+          }
+        })
+
         await send('join-game', { gameId: props.gameId })
 
         // wait for join-game response
@@ -133,19 +139,7 @@ onMounted(() => {
             }
           })
         })
-
-        // wait for game-update response
-        await new Promise((resolve) => {
-          socket.on('game-update', (gameState: any) => {
-            for (const [uuid, player] of Object.entries(gameState)) {
-              players.value.set(uuid, player)
-            }
-            resolve(null)
-          })
-        })
-
-        // await initial game state after joining
-        await send('sync-game', { gameId: props.gameId })
+        
       })
       .catch((err) => {
         console.error('Error fetching game data:', err)
