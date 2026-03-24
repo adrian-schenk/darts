@@ -153,7 +153,8 @@ export class GameState extends JsonSerializable {
       ).map(
         ([uuid, playerState]) => [
           uuid, { 
-            userId: playerState.userId
+            userId: playerState.userId,
+            showStats: playerState.showStats,
           }
         ]
       )

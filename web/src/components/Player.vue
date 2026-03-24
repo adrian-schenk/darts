@@ -1,8 +1,8 @@
 <template>
   <div class="relative p-6 flex flex-col justify-center items-center rounded-lg bg-gray-800">
     <slot />
-    <div v-if="showName" class="text-4xl text-white font-bold">{{ props.player.playerName }}</div>
-    <div v-if="showSets" class="flex justify-center items-center mt-4 text-gray-400">
+    <div v-if="props.player.showStats.showName" class="text-4xl text-white font-bold">{{ props.player.playerName }}</div>
+    <div v-if="props.player.showStats.showSets" class="flex justify-center items-center mt-4 text-gray-400">
       <div class="m-4">0 sets</div>
       <div class="h-8 border-l border-gray-600 mx-4"></div>
       <div class="m-4">0 legs</div>
@@ -82,25 +82,12 @@
       </div>
     </div>
     <div class="flex justify-center items-center gap-4 mt-4 text-gray-400">
-      <div v-if="showAvg" class="flex flex-col justify-center items-center">
-        <div class="text-sm mt-2">Average</div>
-        <div class="text-white text-xl font-extrabold">45</div>
-      </div>
-      <div v-if="showAvg" class="h-8 border-l border-gray-600 mx-4"></div>
-      <div v-if="showAvg" class="flex flex-col justify-center items-center">
-        <div class="text-sm mt-2">First 6 Avg.</div>
-        <div class="text-white text-xl font-extrabold">44</div>
-      </div>
-      <div v-if="showAvg" class="h-8 border-l border-gray-600 mx-4"></div>
-      <div class="flex flex-col justify-center items-center">
-        <div class="text-sm mt-2">Highest Finish</div>
-        <div class="text-white text-xl font-extrabold">65</div>
-      </div>
-      <div class="h-8 border-l border-gray-600 mx-4"></div>
-      <div class="flex flex-col justify-center items-center">
-        <div class="text-sm mt-2">Checkout</div>
-        <div class="text-white text-xl font-extrabold">10%</div>
-      </div>
+      <template v-for="(value, key) in props.player.showStats" :key="key">
+        <div v-if="value" class="flex flex-col justify-center items-center">
+          <div class="text-sm mt-2">{{ PlayerInterface.getStatsName(key as string) }}</div>
+          <div class="text-white text-xl font-extrabold">{{ PlayerInterface.stats[key] ?? 'N/A' }}</div>
+        </div>
+      </template>
     </div>
   </div>
 </template>

@@ -54,6 +54,8 @@ export class DartPlayer {
 
   state = ref<PlayerActionState>(PlayerActionState.THROW_DARTS)
 
+  stats: any = {};
+
   socket: any = null
 
   constructor(public info: DartPlayerInfo) {
@@ -153,5 +155,12 @@ export class DartPlayer {
     if (type === 'double') return num * 2
     if (type === 'triple') return num * 3
     return 0
+  }
+
+  getStatsName(stat: string) {
+    if (stat === 'average_6') return 'Average (6 darts)'
+    if (stat === 'checkout_percentage') return 'Checkout %'
+    if (stat === 'highest_checkout') return 'Highest Checkout'
+    return stat.charAt(0).toUpperCase() + stat.slice(1)
   }
 }

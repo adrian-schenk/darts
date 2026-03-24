@@ -171,7 +171,7 @@ export default class DartsGameService {
       Object.fromEntries(
         await Promise.all(
           Object.entries(state?.getGameUpdateData() ?? {}).map(
-            async ([uuid, playerState]) => [uuid, { playerName: await this.userService.findById(playerState.userId).then(user => user?.username) }],
+            async ([uuid, playerState]) => [uuid, { playerName: await this.userService.findById(playerState.userId).then(user => user?.username), showStats: playerState.showStats }],
           ),
         ),
       ),

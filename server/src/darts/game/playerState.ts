@@ -31,6 +31,16 @@ export class PlayerState extends JsonSerializable {
 
   state: PlayerActionState;
 
+  showStats: any = {
+    'showName': true,
+    'showSets': true,
+    'showLegs': true,
+    'average': true,
+    'average_6': true,
+    'highest_checkout': true,
+    'checkout_percentage': true,
+  };
+
   constructor() {
     super();
     this.uuid = uuidv4();
@@ -48,6 +58,10 @@ export class PlayerState extends JsonSerializable {
 
   public onDartRemove() {
     this.state = PlayerActionState.THROW_DARTS;
+  }
+
+  protected setShowStat(stat: string, value: boolean) {
+    this.showStats[stat] = value;
   }
 
   @Exclude()
@@ -187,6 +201,11 @@ export class CheckoutPlayerState extends DefaultPlayerState {
   constructor() {
     super();
     this.setInitialScore(Number(this.getRandomTarget()));
+    this.setShowStat('showName', false);
+    this.setShowStat('showSets', false);
+    this.setShowStat('showLegs', false);
+    this.setShowStat('average', false);
+    this.setShowStat('average_6', false);
   }
 
   static create(user: User, gameId: string): PlayerState {
