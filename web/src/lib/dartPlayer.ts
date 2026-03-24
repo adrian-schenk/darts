@@ -54,7 +54,7 @@ export class DartPlayer {
 
   state = ref<PlayerActionState>(PlayerActionState.THROW_DARTS)
 
-  stats: any = {};
+  stats: any = {}
 
   socket: any = null
 
@@ -91,6 +91,7 @@ export class DartPlayer {
     }
 
     this.state.value = playerGameState.state
+    this.stats.value = playerGameState.stats
 
     this.score.value = playerGameState.score
     this.throws.value = [
@@ -142,7 +143,7 @@ export class DartPlayer {
     if (type === 'single') return `S${num}`
     if (type === 'double') return `D${num}`
     if (type === 'triple') return `T${num}`
-    return id
+    return ''
   }
 
   getFieldScore = (id: string) => {
@@ -158,9 +159,24 @@ export class DartPlayer {
   }
 
   getStatsName(stat: string) {
-    if (stat === 'average_6') return 'Average (6 darts)'
-    if (stat === 'checkout_percentage') return 'Checkout %'
-    if (stat === 'highest_checkout') return 'Highest Checkout'
+    if (stat === 'avg') return 'Average'
+    if (stat === 'avg_6') return 'Average (6 darts)'
+    if (stat === 'percentage_checkout') return 'Checkout %'
+    if (stat === 'max_checkout') return 'Highest Checkout'
     return stat.charAt(0).toUpperCase() + stat.slice(1)
+  }
+
+  getDataStat(stat: string) {
+    let val = this.stats.value?.[stat].value ?? 'N/A';
+    let suffix = '';
+    if (stat.includes('percentage')) {
+      suffix = '%';
+      val = (Number(val) * 100).toFixed(0);
+    }
+    return (val) + suffix
+  }
+
+  getPlayerStat(stat: string) {
+    return this.stats.value?.player?.[stat] ?? 'N/A'
   }
 }

@@ -30,12 +30,10 @@ export default function useSocket() {
       transports: ['websocket'],
     })
 
-    socket.on('connect', () => {
-      
-    })
+    socket.on('connect', () => {})
 
     socket.on('connected', (msg: any) => {
-      status.value = 'connected';
+      status.value = 'connected'
     })
 
     socket.on('disconnect', () => {

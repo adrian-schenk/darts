@@ -1,9 +1,10 @@
-import { classToPlain, Exclude, instanceToPlain } from 'class-transformer';
+import { classToPlain, Exclude, instanceToPlain, Transform, Type } from 'class-transformer';
 import { GameEntity } from './entities/game.entity';
 import JsonSerializable from 'src/util/JsonSerializable';
 import { DartsCheckoutLogicService } from '../logic/checkout.service';
 import { v4 as uuidv4 } from 'uuid';
 import { User } from 'src/users/user.entity';
+import PlayerStats, { StatType } from './playerStats';
 
 const checkoutLogic: DartsCheckoutLogicService =
   new DartsCheckoutLogicService();
@@ -32,14 +33,22 @@ export class PlayerState extends JsonSerializable {
   state: PlayerActionState;
 
   showStats: any = {
-    'showName': true,
-    'showSets': true,
-    'showLegs': true,
-    'average': true,
-    'average_6': true,
-    'highest_checkout': true,
-    'checkout_percentage': true,
+    player: {
+      showName: true,
+      showSets: true,
+      showLegs: true,
+    },
+    data: {
+      avg: true,
+      avg_6: true,
+      max_checkout: true,
+      percentage_checkout: true,
+    },
   };
+
+  @Type(() => PlayerStats)
+  @Transform(({ value, options }) => options?.ignoreDecorators ? value : value.stats, { toPlainOnly: true })
+  stats: PlayerStats = new PlayerStats();
 
   constructor() {
     super();
@@ -54,14 +63,20 @@ export class PlayerState extends JsonSerializable {
     return state;
   }
 
-  public onDartHit(throwInfo: any) {}
+  public onDartHit(roundId: string, throwInfo: any) {
+    this.stats.logThrow(roundId, throwInfo);
+  }
 
   public onDartRemove() {
     this.state = PlayerActionState.THROW_DARTS;
   }
 
-  protected setShowStat(stat: string, value: boolean) {
-    this.showStats[stat] = value;
+  protected setShowPlayerStat(stat: string, value: boolean) {
+    this.showStats.player[stat] = value;
+  }
+
+  protected setShowDataStat(stat: string, value: boolean) {
+    this.showStats.data[stat] = value;
   }
 
   @Exclude()
@@ -74,7 +89,7 @@ export class PlayerState extends JsonSerializable {
     if (type === 'single') return `S${num}`;
     if (type === 'double') return `D${num}`;
     if (type === 'triple') return `T${num}`;
-    return id;
+    return '';
   };
 
   @Exclude()
@@ -117,7 +132,7 @@ export class DefaultPlayerState extends PlayerState {
     return state;
   }
 
-  public onDartHit(throwInfo: any): void {
+  public onDartHit(roundId: string, throwInfo: any): void {
     const fieldScore = this.getFieldScore(throwInfo.field);
 
     this.currentThrows.push({
@@ -125,16 +140,28 @@ export class DefaultPlayerState extends PlayerState {
       field: this.getFieldName(throwInfo.field),
     });
 
+    // Check for bust
     if (!this.setScore(this.score - fieldScore)) {
       this.currentThrows.at(-1)!.invalid = true;
       this.checkoutCombination = [];
       this.setScore(this.saveScore);
       this.state = PlayerActionState.REMOVE_DARTS;
+      this.stats.trackStat('percentage_checkout', StatType.PERCENTAGE, 0);
       return;
     }
 
+    // Check if turn is over
     if (this.currentThrows.length >= this.throwsPerTurn) {
-      this.saveScore = this.score;
+      if (this.score > 0) {
+        this.saveScore = this.score;
+      }
+      this.state = PlayerActionState.REMOVE_DARTS;
+    }
+
+    // Check for checkout
+    if (this.score <= 0) {
+      this.stats.trackStat('percentage_checkout', StatType.PERCENTAGE, 1);
+      this.stats.trackStat('max_checkout', StatType.MAX, this.saveScore);
       this.state = PlayerActionState.REMOVE_DARTS;
     }
   }
@@ -201,11 +228,11 @@ export class CheckoutPlayerState extends DefaultPlayerState {
   constructor() {
     super();
     this.setInitialScore(Number(this.getRandomTarget()));
-    this.setShowStat('showName', false);
-    this.setShowStat('showSets', false);
-    this.setShowStat('showLegs', false);
-    this.setShowStat('average', false);
-    this.setShowStat('average_6', false);
+    this.setShowPlayerStat('showName', false);
+    this.setShowPlayerStat('showSets', false);
+    this.setShowPlayerStat('showLegs', false);
+    this.setShowDataStat('avg', false);
+    this.setShowDataStat('avg_6', false);
   }
 
   static create(user: User, gameId: string): PlayerState {
@@ -215,12 +242,8 @@ export class CheckoutPlayerState extends DefaultPlayerState {
     return state;
   }
 
-  public onDartHit(throwInfo: any): void {
-    super.onDartHit(throwInfo);
-
-    if (this.score <= 0) {
-      this.state = PlayerActionState.REMOVE_DARTS;
-    }
+  public onDartHit(roundId: string, throwInfo: any): void {
+    super.onDartHit(roundId, throwInfo);
   }
 
   public onDartRemove(): void {

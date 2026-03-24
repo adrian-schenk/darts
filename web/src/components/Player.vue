@@ -1,11 +1,16 @@
 <template>
   <div class="relative p-6 flex flex-col justify-center items-center rounded-lg bg-gray-800">
     <slot />
-    <div v-if="props.player.showStats.showName" class="text-4xl text-white font-bold">{{ props.player.playerName }}</div>
-    <div v-if="props.player.showStats.showSets" class="flex justify-center items-center mt-4 text-gray-400">
-      <div class="m-4">0 sets</div>
+    <div v-if="props.player.showStats.player.showName" class="text-4xl text-white font-bold">
+      {{ props.player.playerName }}
+    </div>
+    <div
+      v-if="props.player.showStats.player.showSets"
+      class="flex justify-center items-center mt-4 text-gray-400"
+    >
+      <div class="m-4">{{ PlayerInterface.getPlayerStat('sets') }} sets</div>
       <div class="h-8 border-l border-gray-600 mx-4"></div>
-      <div class="m-4">0 legs</div>
+      <div class="m-4">{{ PlayerInterface.getPlayerStat('legs') }} legs</div>
     </div>
     <div class="text-8xl text-white my-4 font-bold">{{ PlayerInterface.score }}</div>
     <div class="flex justify-center items-center gap-2 mt-4 text-gray-400">
@@ -81,11 +86,14 @@
         <div :class="index === 0 ? 'text-white' : 'text-gray-400'">{{ score }}</div>
       </div>
     </div>
-    <div class="flex justify-center items-center gap-4 mt-4 text-gray-400">
-      <template v-for="(value, key) in props.player.showStats" :key="key">
-        <div v-if="value" class="flex flex-col justify-center items-center">
+    <div class="flex justify-center items-center mt-4 text-gray-400">
+      <template v-for="([key], i) in visibleStatsEntries" :key="key">
+        <div v-if="i > 0" class="h-8 w-px bg-gray-600"></div>
+        <div class="flex flex-col justify-center items-center px-4">
           <div class="text-sm mt-2">{{ PlayerInterface.getStatsName(key as string) }}</div>
-          <div class="text-white text-xl font-extrabold">{{ PlayerInterface.stats[key] ?? 'N/A' }}</div>
+          <div class="text-white text-xl font-extrabold">
+            {{ PlayerInterface.getDataStat(key as string) }}
+          </div>
         </div>
       </template>
     </div>
@@ -93,12 +101,12 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, watch } from 'vue'
+import { computed, onBeforeUnmount, watch } from 'vue'
 import { DartPlayer, PlayerActionState } from '@/lib/dartPlayer.ts'
 import type { Throw } from '@/lib/dart'
 
 const props = defineProps({
-  player: { type: Object, required: true},
+  player: { type: Object, required: true },
   showName: { type: Boolean, default: true },
   showSets: { type: Boolean, default: true },
   showAvg: { type: Boolean, default: true },
@@ -114,6 +122,10 @@ const PlayerInterface = new DartPlayer({
   initialScore: props.initialScore,
   dartboardRef: props.dartBoardRef,
 })
+
+const visibleStatsEntries = computed(() =>
+  Object.entries(props.player.showStats.data ?? {}).filter(([, isVisible]) => isVisible),
+)
 
 watch(
   () => props.dartBoardRef,

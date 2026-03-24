@@ -136,7 +136,6 @@ onMounted(() => {
             }
           })
         })
-        
       })
       .catch((err) => {
         console.error('Error fetching game data:', err)

@@ -7,6 +7,9 @@ export class DartEventEntity extends Document {
   @Prop({ type: String, required: true })
   gameId: string;
 
+  @Prop({ required: true, type: String })
+  playerUuid: string;
+
   @Prop({ required: true })
   user: number;
 

@@ -14,6 +14,7 @@ import {
 } from './playerState';
 import { User } from 'src/users/user.entity';
 import JsonSerializable from 'src/util/JsonSerializable';
+import { v4 as uuidv4 } from 'uuid';
 
 enum GameStateType {
   PLAYING = 'PLAYING',
@@ -75,8 +76,12 @@ export class GameState extends JsonSerializable {
   @Exclude({ toPlainOnly: true })
   state: GameStateType;
 
+  @Exclude({ toPlainOnly: true })
+  roundUuid: string; 
+
   constructor() {
     super();
+    this.roundUuid = uuidv4();
   }
 
   static create(gameId: string) {
@@ -90,7 +95,7 @@ export class GameState extends JsonSerializable {
       this.currentPlayer &&
       this.playerStates.get(this.currentPlayer)?.userId === user.id
     ) {
-      this.playerStates.get(this.currentPlayer)?.onDartHit(throwInfo);
+      this.playerStates.get(this.currentPlayer)?.onDartHit(this.roundUuid, throwInfo);
       return true;
     }
     return false;
@@ -113,6 +118,10 @@ export class GameState extends JsonSerializable {
 
   setState(state: GameStateType) {
     this.state = state;
+  }
+
+  nextRound() {
+    this.roundUuid = uuidv4();
   }
 
   addPlayer(user: User, ps: PlayerState) {
@@ -148,16 +157,13 @@ export class GameState extends JsonSerializable {
 
   getGameUpdateData() {
     return Object.fromEntries(
-      Array.from(
-        this.playerStates.entries()
-      ).map(
-        ([uuid, playerState]) => [
-          uuid, { 
-            userId: playerState.userId,
-            showStats: playerState.showStats,
-          }
-        ]
-      )
+      Array.from(this.playerStates.entries()).map(([uuid, playerState]) => [
+        uuid,
+        {
+          userId: playerState.userId,
+          showStats: playerState.showStats,
+        },
+      ]),
     );
   }
 }

@@ -19,13 +19,19 @@ export default class PlayerStateFactory {
     const game = await this.gameModel.findOne({ gameId }).exec();
     if (!game) throw new Error(`Game not found: ${gameId}`);
 
+    let playerState: PlayerState;
     switch (game.mode) {
       case 'target':
-        return TargetPlayerState.create(user, game.gameId);
+        playerState = TargetPlayerState.create(user, game.gameId);
+        break;
       case 'checkouts':
-        return CheckoutPlayerState.create(user, game.gameId);
+        playerState = CheckoutPlayerState.create(user, game.gameId);
+        break;
       default:
-        return DefaultPlayerState.create(user, game.gameId);
+        playerState = DefaultPlayerState.create(user, game.gameId);
+        break;
     }
+
+    return playerState;
   }
 }

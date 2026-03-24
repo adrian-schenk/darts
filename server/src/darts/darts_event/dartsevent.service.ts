@@ -28,6 +28,8 @@ export default class DartsEventService {
         gameState.playerStates.get(gameState.currentPlayer)?.userId
     )
       return;
+
+    let playerUuid = gameState.currentPlayer;
     switch (msg.type) {
       case 'dart_hit':
         gameState.onDartHit(socket.data.user, msg.throw);
@@ -42,6 +44,7 @@ export default class DartsEventService {
 
     this.dartEventModel.create({
       gameId: socket.data.gameId,
+      playerUuid: playerUuid,
       user: socket.data.user.id,
       type: msg.type,
       payload: msg,

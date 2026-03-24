@@ -30,7 +30,7 @@ export default class DartsGameService {
     @InjectRedis() private readonly redis: Redis,
     private playerStateFactory: PlayerStateFactory,
     private gameStateFactory: GameStateFactory,
-    private userService: UsersService
+    private userService: UsersService,
   ) {}
 
   async setGameState(gameId: string, state: GameState) {
@@ -103,7 +103,7 @@ export default class DartsGameService {
 
   async joinDartGame(socket: Socket, msg: { gameId: string }) {
     const { gameId } = msg;
-    
+
     if (!(await this.getDartGame(gameId))) {
       socket.emit('join-game', { success: false, message: 'Game not found' });
       return;
@@ -112,7 +112,6 @@ export default class DartsGameService {
     if (!this.joinedClients.has(gameId)) {
       this.joinedClients.set(gameId, []);
     }
-
 
     const gameState = await this.getGameState(gameId);
     socket.data.gameId = gameId;
@@ -171,7 +170,15 @@ export default class DartsGameService {
       Object.fromEntries(
         await Promise.all(
           Object.entries(state?.getGameUpdateData() ?? {}).map(
-            async ([uuid, playerState]) => [uuid, { playerName: await this.userService.findById(playerState.userId).then(user => user?.username), showStats: playerState.showStats }],
+            async ([uuid, playerState]) => [
+              uuid,
+              {
+                playerName: await this.userService
+                  .findById(playerState.userId)
+                  .then((user) => user?.username),
+                showStats: playerState.showStats,
+              },
+            ],
           ),
         ),
       ),
@@ -184,7 +191,10 @@ export default class DartsGameService {
     }
 
     let gameState = await this.getGameState(gameId);
-    if (!gameState || (!gameState.joinable && !(await this.userIsOwner(gameId, user)))) {
+    if (
+      !gameState ||
+      (!gameState.joinable && !(await this.userIsOwner(gameId, user)))
+    ) {
       return false;
     }
 
