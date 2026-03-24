@@ -22,8 +22,8 @@ export default class DartSocketService {
     };
   }
 
-  handleConnection(client: Socket) {
-    this.connectionsService.handleConnection(client);
+  async handleConnection(client: Socket) {
+    await this.connectionsService.handleConnection(client);
   }
 
   handleDisconnect(client: Socket) {

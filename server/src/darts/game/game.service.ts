@@ -94,9 +94,14 @@ export default class DartsGameService {
     return await this.gameModel.findOne({ gameId }).exec();
   }
 
+  async userIsOwner(gameId: string, user: User): Promise<boolean> {
+    const game = await this.getDartGame(gameId);
+    return game?.owner == Number(user.id);
+  }
+
   async joinDartGame(socket: Socket, msg: { gameId: string }) {
     const { gameId } = msg;
-
+    
     if (!(await this.getDartGame(gameId))) {
       socket.emit('join-game', { success: false, message: 'Game not found' });
       return;
@@ -105,10 +110,12 @@ export default class DartsGameService {
     if (!this.joinedClients.has(gameId)) {
       this.joinedClients.set(gameId, []);
     }
-    if (await this.userCanJoinGame(gameId, socket.data.user)) {
-      const gameState = await this.getGameState(gameId);
-      this.joinedClients.get(gameId)?.push(socket);
 
+
+    const gameState = await this.getGameState(gameId);
+    socket.data.gameId = gameId;
+    this.joinedClients.get(gameId)?.push(socket);
+    if (await this.userCanJoinGame(gameId, socket.data.user)) {
       let PlayerUuid = gameState?.addPlayer(
         socket.data.user,
         await this.playerStateFactory.createPlayerState(
@@ -117,17 +124,15 @@ export default class DartsGameService {
         ),
       );
 
-      socket.data.gameId = gameId;
-
       socket.emit('join-game', { success: true, playerId: PlayerUuid });
-      socket.emit('game-update', gameState);
     } else {
       socket.emit('join-game', {
         success: false,
+        spectating: true,
         message: 'Unable to join game',
       });
-      return;
     }
+    socket.emit('game-update', await this.getGameState(gameId));
   }
 
   async leaveDartGame(gameId: string, client: Socket) {
@@ -163,7 +168,7 @@ export default class DartsGameService {
     }
 
     let gameState = await this.getGameState(gameId);
-    if (!gameState || (!gameState.joinable && false)) {
+    if (!gameState || (!gameState.joinable && !(await this.userIsOwner(gameId, user)))) {
       return false;
     }
 

@@ -155,7 +155,7 @@
       </div>
     </div>
     <div
-      v-if="props.playerInterface?.state.value == PlayerActionState.REMOVE_DARTS"
+      v-if="props.playerInterface?.state.value == PlayerActionState.REMOVE_DARTS && props.clickToAddMarker"
       class="absolute bg-slate-700/80 w-full h-full flex flex-col items-center justify-center top-0 left-0"
     >
       <button

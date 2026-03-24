@@ -31,7 +31,11 @@ export default function useSocket() {
     })
 
     socket.on('connect', () => {
-      status.value = 'connected'
+      
+    })
+
+    socket.on('connected', (msg: any) => {
+      status.value = 'connected';
     })
 
     socket.on('disconnect', () => {
@@ -52,9 +56,18 @@ export default function useSocket() {
 
   users++
 
-  function send<TPayload = unknown>(event: string, payload: TPayload) {
-    if (!socket) return
-    socket.emit(event, payload)
+  function send<TPayload = unknown>(event: string, payload: TPayload): Promise<void> {
+    return new Promise((resolve) => {
+      if (!socket) return resolve()
+      if (status.value === 'connected') {
+        socket.emit(event, payload)
+        return resolve()
+      }
+      socket.once('connected', () => {
+        socket.emit(event, payload)
+        resolve()
+      })
+    })
   }
 
   function close() {

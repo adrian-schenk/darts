@@ -17,6 +17,7 @@ export default class ConnectionsService {
   ) {}
 
   async handleConnection(client: Socket) {
+    //await new Promise((resolve) => setTimeout(resolve, 1000)); // Small delay to ensure handshake data is available
     if (!client.handshake.auth.token) {
       client.emit('error', { message: 'Unauthorized', status: 401 });
       setTimeout(() => client.disconnect(), 500);
@@ -43,6 +44,8 @@ export default class ConnectionsService {
       return;
     }
     this.clientsMap.set(client.id, client);
+
+    client.emit('connected', { message: 'Connection established' });
   }
 
   handleDisconnect(client: Socket) {

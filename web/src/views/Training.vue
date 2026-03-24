@@ -41,7 +41,7 @@
         <Dartboard
           :ref="getDartboardRefSetter(playeruuid)"
           class="flex-auto w-full"
-          :click-to-add-marker="true"
+          :click-to-add-marker="localPlayer == playeruuid"
           :player-interface="playerRefs.get(playeruuid)?.PlayerInterface ?? undefined"
         ></Dartboard>
       </div>
@@ -120,13 +120,13 @@ onMounted(() => {
 
         send('join-game', { gameId: props.gameId })
 
-        await new Promise((resolve) => {
+        new Promise((resolve) => {
           setTimeout(resolve, 2000)
           socket.once('join-game', (data: any) => {
             if (data.success) {
               localPlayer.value = data.playerId
               resolve(null)
-            } else {
+            } else if (!data.spectating) {
               router.replace('/training')
               resolve(null)
             }
@@ -139,7 +139,7 @@ onMounted(() => {
           }
         })
 
-        send('sync-game', { gameId: props.gameId })
+        await send('sync-game', { gameId: props.gameId })
       })
       .catch((err) => {
         console.error('Error fetching game data:', err)

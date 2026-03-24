@@ -39,7 +39,7 @@ export class DartSocket implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   async handleConnection(client: Socket): Promise<void> {
-    this.dartSocketService.handleConnection(client);
+    await this.dartSocketService.handleConnection(client);
 
     client.onAny((event, ...args) => {
       const payload = args.length > 1 ? args : args[0];
@@ -49,6 +49,6 @@ export class DartSocket implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   async handleDisconnect(client: Socket): Promise<void> {
-    this.dartSocketService.handleDisconnect(client);
+    await this.dartSocketService.handleDisconnect(client);
   }
 }
