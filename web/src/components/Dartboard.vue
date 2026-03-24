@@ -135,7 +135,6 @@
             fill="white"
             font-weight="bold"
             font-size="22"
-            :transform="`rotate(${i * 18}, ${250 + 200 * Math.cos((i * 18 - 90) * (Math.PI / 180))}, ${250 + 200 * Math.sin((i * 18 - 90) * (Math.PI / 180))})`"
           >
             {{ num }}
           </text>
