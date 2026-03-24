@@ -1,7 +1,7 @@
 <template>
   <div class="relative p-6 flex flex-col justify-center items-center rounded-lg bg-gray-800">
     <slot />
-    <div v-if="showName" class="text-4xl text-white font-bold">Player name</div>
+    <div v-if="showName" class="text-4xl text-white font-bold">{{ props.player.playerName }}</div>
     <div v-if="showSets" class="flex justify-center items-center mt-4 text-gray-400">
       <div class="m-4">0 sets</div>
       <div class="h-8 border-l border-gray-600 mx-4"></div>
@@ -111,6 +111,7 @@ import { DartPlayer, PlayerActionState } from '@/lib/dartPlayer.ts'
 import type { Throw } from '@/lib/dart'
 
 const props = defineProps({
+  player: { type: Object, required: true},
   showName: { type: Boolean, default: true },
   showSets: { type: Boolean, default: true },
   showAvg: { type: Boolean, default: true },

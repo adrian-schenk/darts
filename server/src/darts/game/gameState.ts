@@ -99,7 +99,7 @@ export class GameState extends JsonSerializable {
     return false;
   }
 
-  setTurn() {}
+  setTurn() { }
 
   addPlayer(user: User, ps: PlayerState) {
     let playerUuid = '';
@@ -130,5 +130,19 @@ export class GameState extends JsonSerializable {
 
   getPlayerStates() {
     return this.playerStates;
+  }
+
+  getGameUpdateData() {
+    return Object.fromEntries(
+      Array.from(
+        this.playerStates.entries()
+      ).map(
+        ([uuid, playerState]) => [
+          uuid, { 
+            userId: playerState.userId
+          }
+        ]
+      )
+    );
   }
 }

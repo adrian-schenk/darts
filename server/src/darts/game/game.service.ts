@@ -17,6 +17,7 @@ import { GameState } from './gameState';
 import GameStateFactory from './gameFactory';
 import PlayerStateFactory from './stateFactory';
 import { plainToClassFromExist, plainToInstance } from 'class-transformer';
+import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export default class DartsGameService {
@@ -29,6 +30,7 @@ export default class DartsGameService {
     @InjectRedis() private readonly redis: Redis,
     private playerStateFactory: PlayerStateFactory,
     private gameStateFactory: GameStateFactory,
+    private userService: UsersService
   ) {}
 
   async setGameState(gameId: string, state: GameState) {
@@ -132,7 +134,7 @@ export default class DartsGameService {
         message: 'Unable to join game',
       });
     }
-    socket.emit('game-update', await this.getGameState(gameId));
+    socket.emit('game-update', await this.getGameUpdateData(gameId));
   }
 
   async leaveDartGame(gameId: string, client: Socket) {
@@ -160,6 +162,18 @@ export default class DartsGameService {
     }
 
     socket.emit('player-event', gameState);
+  }
+
+  async getGameUpdateData(gameId: string) {
+    return await this.getGameState(gameId).then(async (state) =>
+      Object.fromEntries(
+        await Promise.all(
+          Object.entries(state?.getGameUpdateData() ?? {}).map(
+            async ([uuid, playerState]) => [uuid, { playerName: await this.userService.findById(playerState.userId).then(user => user?.username) }],
+          ),
+        ),
+      ),
+    );
   }
 
   async userCanJoinGame(gameId: string, user: User | null): Promise<boolean> {

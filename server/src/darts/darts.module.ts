@@ -13,10 +13,12 @@ import {
   DartEventEntity,
   DartEventEntitySchema,
 } from './darts_event/dart_event.entity';
+import { UsersModule } from 'src/users/users.module';
 
 @Module({
   imports: [
     forwardRef(() => WsModule),
+    forwardRef(() => UsersModule),
     MongooseModule.forFeature([
       { name: GameEntity.name, schema: GameEntitySchema },
       { name: DartEventEntity.name, schema: DartEventEntitySchema },

@@ -27,8 +27,8 @@
       >
         <Player
           class="flex-auto h-auto w-full"
+          :player="player"
           :ref="getPlayerRefSetter(playeruuid)"
-          :v-bind:player="player"
           :show-name="true"
           :show-sets="true"
           :show-avg="true"
@@ -118,9 +118,9 @@ onMounted(() => {
           }
         }
 
-        send('join-game', { gameId: props.gameId })
+        await send('join-game', { gameId: props.gameId })
 
-        new Promise((resolve) => {
+        await new Promise((resolve) => {
           setTimeout(resolve, 2000)
           socket.once('join-game', (data: any) => {
             if (data.success) {
@@ -133,10 +133,13 @@ onMounted(() => {
           })
         })
 
-        socket.on('game-update', (gameState: any) => {
-          for (const player of Object.values(gameState.playerStates)) {
-            players.value.set((player as any).uuid, player)
-          }
+        await new Promise((resolve) => {
+          socket.on('game-update', (gameState: any) => {
+            for (const [uuid, player] of Object.entries(gameState)) {
+              players.value.set(uuid, player)
+            }
+            resolve(null)
+          })
         })
 
         await send('sync-game', { gameId: props.gameId })
