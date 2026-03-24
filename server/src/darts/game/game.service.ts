@@ -134,7 +134,9 @@ export default class DartsGameService {
         message: 'Unable to join game',
       });
     }
+    this.setGameState(gameId, gameState!);
     socket.emit('game-update', await this.getGameUpdateData(gameId));
+    socket.emit('player-event', gameState);
   }
 
   async leaveDartGame(gameId: string, client: Socket) {
