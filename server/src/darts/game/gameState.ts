@@ -15,6 +15,11 @@ import {
 import { User } from 'src/users/user.entity';
 import JsonSerializable from 'src/util/JsonSerializable';
 
+enum GameStateType {
+  PLAYING = 'PLAYING',
+  BULLING_OFF = 'BULLING_OFF',
+}
+
 export class GameState extends JsonSerializable {
   @Exclude({ toPlainOnly: true })
   joinable: boolean = true;
@@ -67,6 +72,9 @@ export class GameState extends JsonSerializable {
   @Exclude({ toPlainOnly: true })
   currentPlayer: string;
 
+  @Exclude({ toPlainOnly: true })
+  state: GameStateType;
+
   constructor() {
     super();
   }
@@ -99,7 +107,13 @@ export class GameState extends JsonSerializable {
     return false;
   }
 
-  setTurn() { }
+  setTurn(playerUuid: string) {
+    this.currentPlayer = playerUuid;
+  }
+
+  setState(state: GameStateType) {
+    this.state = state;
+  }
 
   addPlayer(user: User, ps: PlayerState) {
     let playerUuid = '';
