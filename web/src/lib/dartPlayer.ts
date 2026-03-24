@@ -2,11 +2,6 @@ import { ref } from 'vue'
 import type { Throw } from '@/lib/dart.ts'
 import useSocket from './socket'
 
-export enum CountingMode {
-  SUBTRACT,
-  ADD,
-}
-
 export enum PlayerActionState {
   IDLE,
   THROW_DARTS,
@@ -18,7 +13,6 @@ export interface DartPlayerInfo {
   uuid: string
   name: string
   initialScore: number
-  countingMode?: CountingMode
   throwsPerTurn?: number
   dartboardRef?:
     | {
