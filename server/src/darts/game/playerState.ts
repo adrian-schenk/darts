@@ -40,6 +40,9 @@ export class PlayerState extends JsonSerializable {
   @Exclude({ toPlainOnly: true })
   playername: string;
 
+  @Exclude({ toPlainOnly: true })
+  controllerType: 'human' | 'bot' = 'human';
+
   state: PlayerActionState;
 
   showStats: any = {

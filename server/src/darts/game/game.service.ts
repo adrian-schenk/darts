@@ -8,6 +8,7 @@ import { Socket } from 'socket.io';
 import PlayerState, {
   CheckoutPlayerState,
   DefaultPlayerState,
+  PlayerActionState,
   TargetPlayerState,
 } from './playerState';
 import { InjectRedis } from '@nestjs-modules/ioredis/dist/redis.decorators';
@@ -18,6 +19,12 @@ import GameStateFactory from './gameFactory';
 import PlayerStateFactory from './stateFactory';
 import { plainToClassFromExist, plainToInstance } from 'class-transformer';
 import { UsersService } from 'src/users/users.service';
+import { HumanPlayerController } from './controllers/humanPlayer.controller';
+import {
+  BotPlayerController,
+  BotProfile,
+} from './controllers/botPlayer.controller';
+import { BotUser } from './controllers/playerController.interface';
 
 @Injectable()
 export default class DartsGameService {
@@ -32,7 +39,7 @@ export default class DartsGameService {
     private playerStateFactory: PlayerStateFactory,
     private gameStateFactory: GameStateFactory,
     private userService: UsersService,
-  ) {}
+  ) { }
 
   async setGameState(gameId: string, state: GameState) {
     this.gameStates.set(gameId, state);
@@ -97,6 +104,12 @@ export default class DartsGameService {
         await this.gameStateFactory.createGameStateFromMode(mode, res.gameId);
       gameState.joinable = false;
 
+      const ps = await this.playerStateFactory.createPlayerState(
+        BotUser,
+        res.gameId,
+      );
+      const PlayerUuid = gameState?.addPlayer(BotUser, ps, new BotPlayerController());
+
       await this.setGameState(res.gameId, gameState);
     }
 
@@ -129,13 +142,13 @@ export default class DartsGameService {
       }
 
       this.joinedClients.get(gameId)?.push(socket);
-      let PlayerUuid = gameState?.addPlayer(
+      const ps = await this.playerStateFactory.createPlayerState(
         socket.data.user,
-        await this.playerStateFactory.createPlayerState(
-          socket.data.user,
-          gameId,
-        ),
+        gameId,
       );
+      const PlayerUuid = gameState?.addPlayer(socket.data.user, ps, new HumanPlayerController());
+      
+      gameState?.setTurn(PlayerUuid ?? '');
 
       socket.emit('join-game', { success: true, playerId: PlayerUuid });
     } else {
@@ -170,17 +183,6 @@ export default class DartsGameService {
     await this.gameModel.deleteOne({ gameId }).exec();
     this.gameStates.delete(gameId);
     this.joinedClients.delete(gameId);
-  }
-
-  async syncGameState(socket: Socket, msg: { gameId: string }) {
-    const { gameId } = msg;
-    const gameState = await this.getGameState(gameId);
-
-    if (!gameState) {
-      return;
-    }
-
-    socket.emit('player-event', gameState);
   }
 
   async getGameUpdateData(gameId: string) {
@@ -222,7 +224,6 @@ export default class DartsGameService {
   }
 
   async broadcast(gameId: string, event: string, data: any) {
-    console.log(this.joinedClients, this.spectatingClients);
     // Broadcast data to joined clients and spectators
     for (const clients of this.joinedClients.get(gameId) || []) {
       clients.emit(event, data);

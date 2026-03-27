@@ -29,36 +29,9 @@ export default class DartsEventService {
     )
       return;
 
-    let playerUuid = gameState.currentPlayer;
-    switch (msg.type) {
-      case 'dart_hit':
-        gameState.onDartHit(socket.data.user, msg.throw);
-        break;
-      case 'dart_remove':
-        gameState.onDartRemove(socket.data.user);
-        break;
-      default:
-        console.warn('Unknown dart event type:', msg.type);
-        break;
-    }
-
-    msg.playerUuid = playerUuid;
-
-    this.dartEventModel.create({
-      gameId: socket.data.gameId,
-      playerUuid: playerUuid,
-      user: socket.data.user.id,
-      type: msg.type,
-      payload: msg,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-
-    // Update game state in memory and Redis
-    this.gameService.setGameState(socket.data.gameId, gameState);
-
-    this.gameService.broadcast(socket.data.gameId, 'player-event', gameState);
-    this.gameService.broadcast(socket.data.gameId, 'dart-event', msg);
+    gameState!.providers.dartEventModel = this.dartEventModel;
+    gameState!.providers.gameService = this.gameService;
+    await gameState.trigger(msg.type, socket.data.user, msg);
   }
 
   async canUserThrow(socket: Socket): Promise<boolean> {
