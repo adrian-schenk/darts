@@ -5,6 +5,7 @@ import { DartsCheckoutLogicService } from '../logic/checkout.service';
 import { v4 as uuidv4 } from 'uuid';
 import { User } from 'src/users/user.entity';
 import PlayerStats, { StatType } from './playerStats';
+import { GameState } from './gameState';
 
 const checkoutLogic: DartsCheckoutLogicService =
   new DartsCheckoutLogicService();
@@ -29,6 +30,9 @@ export class PlayerState extends JsonSerializable {
 
   @Exclude({ toPlainOnly: true })
   userId: number;
+
+  @Exclude({ toPlainOnly: true })
+  playername: string;
 
   state: PlayerActionState;
 
@@ -63,12 +67,20 @@ export class PlayerState extends JsonSerializable {
     return state;
   }
 
-  public onDartHit(roundId: string, throwInfo: any) {
-    this.stats.logThrow(roundId, throwInfo);
+  public onDartHit(roundId: string, throwInfo: any): any {
+    this.stats.logThrow(this, roundId, throwInfo);
   }
 
   public onDartRemove() {
     this.state = PlayerActionState.THROW_DARTS;
+  }
+
+  public onRoundEnd(game: GameState) {
+
+  }
+
+  public hasRoundEnded(game: GameState): boolean {
+    return false;
   }
 
   protected setShowPlayerStat(stat: string, value: boolean) {
@@ -80,7 +92,7 @@ export class PlayerState extends JsonSerializable {
   }
 
   @Exclude()
-  protected getFieldName = (id: string) => {
+  public getFieldName = (id: string) => {
     if (typeof id !== 'string') return '';
     if (id === 'miss') return 'Miss';
     if (id === 'outer-bull') return 'SB';
@@ -93,7 +105,7 @@ export class PlayerState extends JsonSerializable {
   };
 
   @Exclude()
-  protected getFieldScore = (id: string) => {
+  public getFieldScore = (id: string) => {
     if (typeof id !== 'string') return 0;
     if (id === 'miss') return 0;
     if (id === 'outer-bull') return 25;
@@ -132,7 +144,9 @@ export class DefaultPlayerState extends PlayerState {
     return state;
   }
 
-  public onDartHit(roundId: string, throwInfo: any): void {
+  public onDartHit(roundId: string, throwInfo: any): any {
+    super.onDartHit(roundId, throwInfo);
+
     const fieldScore = this.getFieldScore(throwInfo.field);
 
     this.currentThrows.push({
@@ -171,6 +185,14 @@ export class DefaultPlayerState extends PlayerState {
     this.state = PlayerActionState.THROW_DARTS;
 
     this.recalculateCheckoutCombination();
+  }
+
+  public onRoundEnd(game: GameState) {
+    this.setInitialScore(game.config.startingScore || 501);
+  }
+
+  public hasRoundEnded(game: GameState): boolean {
+    return this.score <= 0;
   }
 
   public setScore(score: number): boolean {
@@ -242,16 +264,20 @@ export class CheckoutPlayerState extends DefaultPlayerState {
     return state;
   }
 
-  public onDartHit(roundId: string, throwInfo: any): void {
+  public onDartHit(roundId: string, throwInfo: any): any {
     super.onDartHit(roundId, throwInfo);
   }
 
   public onDartRemove(): void {
     super.onDartRemove();
+  }
 
-    if (this.score <= 0) {
-      this.setInitialScore(Number(this.getRandomTarget()));
-    }
+  public onRoundEnd(game: GameState): void {
+    this.setInitialScore(Number(this.getRandomTarget()));
+  }
+
+  public hasRoundEnded(game: GameState): boolean {
+    return this.score <= 0;
   }
 
   public getRandomTarget() {

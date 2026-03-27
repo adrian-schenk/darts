@@ -1,5 +1,5 @@
 <template>
-  <div class="dartboard-wrapper relative overflow-hidden">
+  <div v-if="playerInterface && playerInterface.state !== PlayerActionState.IDLE" class="dartboard-wrapper relative overflow-hidden">
     <div class="dartboard-container">
       <svg ref="svgRef" viewBox="0 0 500 500" class="dartboard-svg" @click="handleBoardClick">
         <defs>
@@ -155,13 +155,13 @@
     </div>
     <div
       v-if="
-        props.playerInterface?.state.value == PlayerActionState.REMOVE_DARTS &&
+        playerInterface?.state == PlayerActionState.REMOVE_DARTS &&
         props.clickToAddMarker
       "
       class="absolute bg-slate-700/80 w-full h-full flex flex-col items-center justify-center top-0 left-0"
     >
       <button
-        @click="props.playerInterface && props.playerInterface.endTurn()"
+        @click="playerInterface && playerInterface.endTurn()"
         class="text-2xl cursor-pointer border-2 rounded-full px-3 py-1 border-yellow-600 text-white font-bold hover:bg-yellow-600"
       >
         Removed darts
@@ -177,17 +177,34 @@ import { onMounted, ref, watch } from 'vue'
 
 let { socket, status, data, send, close } = useSocket()
 
-const props = defineProps({
+let props = defineProps({
   clickToAddMarker: { type: Boolean, default: false },
   showScore: { type: Boolean, default: true },
   manualInput: { type: Boolean, default: true },
   playerInterface: { type: DartPlayer, default: null },
 })
 
+const playerInterface = ref(props.playerInterface)
 const svgRef = ref<SVGSVGElement | null>(null)
 const markers = ref<{ x: number; y: number; id: string }[]>([])
 const activeSegment = ref<string | null>(null)
 const highlightedSegment = ref<string | null>('single-20')
+
+onMounted(() => {
+  // For local games, theres only one dartboard, so create a "dummy" Dartplayer that listens to all events
+  if (!playerInterface.value) {
+    playerInterface.value = new DartPlayer({uuid: '', name: '', initialScore: 0})
+    socket.on('player-event', (msg: any) => {
+      for (const playerState of msg.playerStates ? Object.values(msg.playerStates) : [msg]) {
+        if (playerState.state == PlayerActionState.REMOVE_DARTS) {
+          playerInterface.value!.state = PlayerActionState.REMOVE_DARTS;
+          return;
+        }
+      }
+      playerInterface.value!.state = PlayerActionState.THROW_DARTS;
+    })
+  }
+})
 
 const handleBoardClick = (event: MouseEvent) => {
   if (!props.clickToAddMarker || !svgRef.value) return

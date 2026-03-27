@@ -88,8 +88,18 @@ export default class DartsGameService {
       ? players
       : Object.values(players).flat();
     const teams = !Array.isArray(players) ? players : undefined;
-    const createdGame = new this.gameModel({ playerIds, teams, mode, status });
-    return await createdGame.save();
+    const createdGame = new this.gameModel({ mode, status, owner: 2 });
+    let res =  await createdGame.save();
+
+    if (!(await this.getGameState(res.gameId))) {
+      let gameState: GameState =
+        await this.gameStateFactory.createGameStateFromMode(mode, res.gameId);
+      gameState.joinable = false;
+
+      await this.setGameState(res.gameId, gameState);
+    }
+
+    return res;
   }
 
   async getDartGame(gameId: string): Promise<GameEntity | null> {
@@ -173,7 +183,7 @@ export default class DartsGameService {
             async ([uuid, playerState]) => [
               uuid,
               {
-                playerName: await this.userService
+                playerName: playerState.playername || await this.userService
                   .findById(playerState.userId)
                   .then((user) => user?.username),
                 showStats: playerState.showStats,

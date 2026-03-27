@@ -8,6 +8,7 @@ import { GameEntity } from './entities/game.entity';
 import {
   CheckoutPlayerState,
   DefaultPlayerState,
+  PlayerActionState,
   PlayerState,
   playerStateTypeMap,
   TargetPlayerState,
@@ -77,7 +78,10 @@ export class GameState extends JsonSerializable {
   state: GameStateType;
 
   @Exclude({ toPlainOnly: true })
-  roundUuid: string; 
+  roundUuid: string;
+
+  @Exclude({ toPlainOnly: true })
+  config: any = {};
 
   constructor() {
     super();
@@ -96,7 +100,6 @@ export class GameState extends JsonSerializable {
       this.playerStates.get(this.currentPlayer)?.userId === user.id
     ) {
       this.playerStates.get(this.currentPlayer)?.onDartHit(this.roundUuid, throwInfo);
-      return true;
     }
     return false;
   }
@@ -107,13 +110,41 @@ export class GameState extends JsonSerializable {
       this.playerStates.get(this.currentPlayer)?.userId === user.id
     ) {
       this.playerStates.get(this.currentPlayer)?.onDartRemove();
+
+      if (this.playerStates.get(this.currentPlayer)?.hasRoundEnded(this)) {
+        this.playerStates.get(this.currentPlayer)?.stats.winLeg(3);
+        this.playerStates.forEach((ps, uuid) => {
+          ps.onRoundEnd(this);
+        });
+        this.nextRound();
+      }
+
+      this.switchTurn();
+
       return true;
     }
     return false;
   }
 
+  switchTurn() {
+    const previousPlayer = this.currentPlayer;
+    for (const uuid of this.playerStates.keys()) {
+      if (uuid !== previousPlayer) {
+        this.setTurn(uuid);
+        break;
+      }
+    }
+  }
+
   setTurn(playerUuid: string) {
+    const previousPlayer = this.currentPlayer;
+    if (previousPlayer && previousPlayer !== playerUuid) {
+      this.playerStates.get(previousPlayer)!.state = PlayerActionState.IDLE;
+    }
+
     this.currentPlayer = playerUuid;
+    this.playerStates.get(this.currentPlayer)!.state =
+      PlayerActionState.THROW_DARTS;
   }
 
   setState(state: GameStateType) {
@@ -135,7 +166,7 @@ export class GameState extends JsonSerializable {
         this.playerStates.set(playerUuid, playerState);
 
         if (!this.currentPlayer) {
-          this.currentPlayer = playerState.uuid;
+          this.setTurn(playerState.uuid);
         }
       }
       this.users.set(user.uuid, String(user.id));
@@ -162,6 +193,7 @@ export class GameState extends JsonSerializable {
         {
           userId: playerState.userId,
           showStats: playerState.showStats,
+          playername: playerState.playername,
         },
       ]),
     );

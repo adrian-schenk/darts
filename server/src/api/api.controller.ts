@@ -94,6 +94,16 @@ export class ApiController {
     return { gameId: game.gameId, mode };
   }
 
+  @Post('/create-local')
+  async createLocal(@Req() req) {
+    const game: GameEntity = await this.dartsGameService.createDartGame(
+      req.user,
+      'local-game',
+    );
+
+    return { gameId: game.gameId };
+  }
+
   @Get('/game/:gameId')
   async getGame(@Param('gameId') gameId: string) {
     const game: GameEntity | null =

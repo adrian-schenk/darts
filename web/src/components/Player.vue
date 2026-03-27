@@ -1,5 +1,5 @@
 <template>
-  <div class="relative p-6 flex flex-col justify-center items-center rounded-lg bg-gray-800">
+  <div class="relative p-6 flex flex-col justify-center items-center rounded-lg bg-gray-800" :class="PlayerInterface.state.value === PlayerActionState.IDLE ? 'opacity-50' : ''">
     <slot />
     <div v-if="props.player.showStats.player.showName" class="text-4xl text-white font-bold">
       {{ props.player.playerName }}
@@ -107,11 +107,7 @@ import type { Throw } from '@/lib/dart'
 
 const props = defineProps({
   player: { type: Object, required: true },
-  showName: { type: Boolean, default: true },
-  showSets: { type: Boolean, default: true },
-  showAvg: { type: Boolean, default: true },
   showHistory: { type: Boolean, default: true },
-  initialScore: { type: Number, default: 501 },
   uuid: { type: String, default: '' },
   dartBoardRef: { type: Object, default: null },
 })
@@ -119,7 +115,6 @@ const props = defineProps({
 const PlayerInterface = new DartPlayer({
   uuid: props.uuid,
   name: '',
-  initialScore: props.initialScore,
   dartboardRef: props.dartBoardRef,
 })
 

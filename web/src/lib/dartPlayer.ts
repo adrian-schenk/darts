@@ -12,7 +12,6 @@ export enum PlayerActionState {
 export interface DartPlayerInfo {
   uuid: string
   name: string
-  initialScore: number
   throwsPerTurn?: number
   dartboardRef?:
     | {
@@ -71,6 +70,9 @@ export class DartPlayer {
   }
 
   private readonly handleDartEvent = (msg: any) => {
+    if (this.uuid && msg.playerUuid !== this.uuid)
+      return
+
     if (msg.type === 'dart_hit') {
       const t: Throw = msg.throw
       t.score = this.getFieldScore(t.field)
@@ -80,6 +82,10 @@ export class DartPlayer {
   }
 
   private readonly handlePlayerEvent = (gameState: any) => {
+
+    if (!this.uuid)
+      return;
+
     const playerGameState = gameState.playerStates?.[this.uuid] ?? gameState
     const board = this.getBoard()
     if (
@@ -167,8 +173,11 @@ export class DartPlayer {
   }
 
   getDataStat(stat: string) {
-    let val = this.stats.value?.[stat].value ?? 'N/A';
+    let val = this.stats.value?.[stat] ? this.stats.value?.[stat].value : 'N/A';
     let suffix = '';
+    if (stat.includes('avg')) {
+      val = Number(val).toFixed(0);
+    }
     if (stat.includes('percentage')) {
       suffix = '%';
       val = (Number(val) * 100).toFixed(0);
@@ -177,6 +186,6 @@ export class DartPlayer {
   }
 
   getPlayerStat(stat: string) {
-    return this.stats.value?.player?.[stat] ?? 'N/A'
+    return this.stats.value?.[stat] ? this.stats.value?.[stat].value : 'N/A';
   }
 }

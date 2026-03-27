@@ -42,6 +42,8 @@ export default class DartsEventService {
         break;
     }
 
+    msg.playerUuid = playerUuid;
+
     this.dartEventModel.create({
       gameId: socket.data.gameId,
       playerUuid: playerUuid,
