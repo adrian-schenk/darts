@@ -1,5 +1,5 @@
-import { Exclude } from "class-transformer";
-import { PlayerState } from "./playerState";
+import { Exclude } from 'class-transformer';
+import { PlayerState } from './playerState';
 
 export enum StatType {
   VAL,
@@ -12,16 +12,16 @@ export enum StatType {
 export default class PlayerStats {
   stats: any = {
     legs: {
-      value: 0
+      value: 0,
     },
     sets: {
-      value: 0
-    }
+      value: 0,
+    },
   };
 
   throwLog: any[] = [];
 
-  constructor() { }
+  constructor() {}
 
   logThrow(player: PlayerState, roundId: string, throwInfo: any) {
     this.throwLog.push({ roundId, ...throwInfo });
@@ -35,7 +35,7 @@ export default class PlayerStats {
     }
 
     if (totalThrows > 0) {
-      this.trackStat('avg', StatType.AVG, totalScore / totalThrows * 3);
+      this.trackStat('avg', StatType.AVG, (totalScore / totalThrows) * 3);
     }
   }
 
@@ -86,7 +86,6 @@ export default class PlayerStats {
   }
 
   winLeg(legsPerSet: number) {
-
     if (!this.stats.legs) {
       this.stats.legs = { value: 0 };
     }
@@ -100,5 +99,4 @@ export default class PlayerStats {
       this.stats.legs.value = 0;
     }
   }
-  
 }

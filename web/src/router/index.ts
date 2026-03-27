@@ -20,7 +20,12 @@ const router = createRouter({
       children: [
         { path: 'home', component: () => import('../views/Dashboard.vue') },
         { path: 'local-game', component: () => import('../views/PrivateGame.vue') },
-        { name: 'local-game-session', path: 'local-game/:gameId', component: () => import('../views/PrivateGame.vue'), props: true },
+        {
+          name: 'local-game-session',
+          path: 'local-game/:gameId',
+          component: () => import('../views/PrivateGame.vue'),
+          props: true,
+        },
         { path: 'online-game', component: () => import('../views/Dashboard.vue') },
         { path: 'local-tournament', component: () => import('../views/Dashboard.vue') },
         { path: 'online-tournament', component: () => import('../views/Dashboard.vue') },

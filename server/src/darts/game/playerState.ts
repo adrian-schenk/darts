@@ -1,4 +1,10 @@
-import { classToPlain, Exclude, instanceToPlain, Transform, Type } from 'class-transformer';
+import {
+  classToPlain,
+  Exclude,
+  instanceToPlain,
+  Transform,
+  Type,
+} from 'class-transformer';
 import { GameEntity } from './entities/game.entity';
 import JsonSerializable from 'src/util/JsonSerializable';
 import { DartsCheckoutLogicService } from '../logic/checkout.service';
@@ -51,7 +57,10 @@ export class PlayerState extends JsonSerializable {
   };
 
   @Type(() => PlayerStats)
-  @Transform(({ value, options }) => options?.ignoreDecorators ? value : value.stats, { toPlainOnly: true })
+  @Transform(
+    ({ value, options }) => (options?.ignoreDecorators ? value : value.stats),
+    { toPlainOnly: true },
+  )
   stats: PlayerStats = new PlayerStats();
 
   constructor() {
@@ -75,9 +84,7 @@ export class PlayerState extends JsonSerializable {
     this.state = PlayerActionState.THROW_DARTS;
   }
 
-  public onRoundEnd(game: GameState) {
-
-  }
+  public onRoundEnd(game: GameState) {}
 
   public hasRoundEnded(game: GameState): boolean {
     return false;

@@ -3,17 +3,27 @@
     <div v-if="true" class="w-full mx-auto">
       <div class="flex flex-col gap-4 w-full h-full">
         <div class="flex flex-row gap-4">
-          <Player v-for="[playeruuid, player] of players" :key="playeruuid" class="flex-auto h-auto w-full" :player="player" :ref="getPlayerRefSetter(playeruuid)"
-            :show-history="true" :dart-board-ref="dartboardRef ?? undefined" :uuid="playeruuid">
+          <Player
+            v-for="[playeruuid, player] of players"
+            :key="playeruuid"
+            class="flex-auto h-auto w-full"
+            :player="player"
+            :ref="getPlayerRefSetter(playeruuid)"
+            :show-history="true"
+            :dart-board-ref="dartboardRef ?? undefined"
+            :uuid="playeruuid"
+          >
           </Player>
         </div>
-        <Dartboard ref="dartboardRef" class="flex-auto w-full" :click-to-add-marker="!isSpectating"></Dartboard>
+        <Dartboard
+          ref="dartboardRef"
+          class="flex-auto w-full"
+          :click-to-add-marker="!isSpectating"
+        ></Dartboard>
       </div>
-
     </div>
 
     <router-view />
-
   </div>
 </template>
 
@@ -80,7 +90,7 @@ onMounted(() => {
           setTimeout(resolve, 2000)
           socket.once('join-game', (data: any) => {
             if (data.success) {
-              isSpectating.value = data.spectating;
+              isSpectating.value = data.spectating
               resolve(null)
             } else if (!data.spectating) {
               router.replace('/local-game')
@@ -113,7 +123,6 @@ const startSession = (mode: string) => {
       console.error('Error starting training session:', err)
     })
 }
-
 </script>
 
 <style scoped></style>

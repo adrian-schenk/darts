@@ -99,7 +99,9 @@ export class GameState extends JsonSerializable {
       this.currentPlayer &&
       this.playerStates.get(this.currentPlayer)?.userId === user.id
     ) {
-      this.playerStates.get(this.currentPlayer)?.onDartHit(this.roundUuid, throwInfo);
+      this.playerStates
+        .get(this.currentPlayer)
+        ?.onDartHit(this.roundUuid, throwInfo);
     }
     return false;
   }

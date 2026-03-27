@@ -1,5 +1,8 @@
 <template>
-  <div class="relative p-6 flex flex-col justify-center items-center rounded-lg bg-gray-800" :class="PlayerInterface.state.value === PlayerActionState.IDLE ? 'opacity-50' : ''">
+  <div
+    class="relative p-6 flex flex-col justify-center items-center rounded-lg bg-gray-800"
+    :class="PlayerInterface.state.value === PlayerActionState.IDLE ? 'opacity-50' : ''"
+  >
     <slot />
     <div v-if="props.player.showStats.player.showName" class="text-4xl text-white font-bold">
       {{ props.player.playerName }}

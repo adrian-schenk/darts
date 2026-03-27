@@ -90,7 +90,7 @@ export default class DartsGameService {
       : Object.values(players).flat();
     const teams = !Array.isArray(players) ? players : undefined;
     const createdGame = new this.gameModel({ mode, status, owner: 2 });
-    let res =  await createdGame.save();
+    let res = await createdGame.save();
 
     if (!(await this.getGameState(res.gameId))) {
       let gameState: GameState =
@@ -191,9 +191,11 @@ export default class DartsGameService {
             async ([uuid, playerState]) => [
               uuid,
               {
-                playerName: playerState.playername || await this.userService
-                  .findById(playerState.userId)
-                  .then((user) => user?.username),
+                playerName:
+                  playerState.playername ||
+                  (await this.userService
+                    .findById(playerState.userId)
+                    .then((user) => user?.username)),
                 showStats: playerState.showStats,
               },
             ],

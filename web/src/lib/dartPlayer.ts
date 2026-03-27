@@ -70,8 +70,7 @@ export class DartPlayer {
   }
 
   private readonly handleDartEvent = (msg: any) => {
-    if (this.uuid && msg.playerUuid !== this.uuid)
-      return
+    if (this.uuid && msg.playerUuid !== this.uuid) return
 
     if (msg.type === 'dart_hit') {
       const t: Throw = msg.throw
@@ -82,9 +81,7 @@ export class DartPlayer {
   }
 
   private readonly handlePlayerEvent = (gameState: any) => {
-
-    if (!this.uuid)
-      return;
+    if (!this.uuid) return
 
     const playerGameState = gameState.playerStates?.[this.uuid] ?? gameState
     const board = this.getBoard()
@@ -173,19 +170,19 @@ export class DartPlayer {
   }
 
   getDataStat(stat: string) {
-    let val = this.stats.value?.[stat] ? this.stats.value?.[stat].value : 'N/A';
-    let suffix = '';
+    let val = this.stats.value?.[stat] ? this.stats.value?.[stat].value : 'N/A'
+    let suffix = ''
     if (stat.includes('avg')) {
-      val = Number(val).toFixed(0);
+      val = Number(val).toFixed(0)
     }
     if (stat.includes('percentage')) {
-      suffix = '%';
-      val = (Number(val) * 100).toFixed(0);
+      suffix = '%'
+      val = (Number(val) * 100).toFixed(0)
     }
-    return (val) + suffix
+    return val + suffix
   }
 
   getPlayerStat(stat: string) {
-    return this.stats.value?.[stat] ? this.stats.value?.[stat].value : 'N/A';
+    return this.stats.value?.[stat] ? this.stats.value?.[stat].value : 'N/A'
   }
 }
