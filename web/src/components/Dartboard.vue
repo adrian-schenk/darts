@@ -180,7 +180,6 @@ let { socket, status, data, send, close } = useSocket()
 let props = defineProps({
   clickToAddMarker: { type: Boolean, default: false },
   showScore: { type: Boolean, default: true },
-  manualInput: { type: Boolean, default: true },
   playerInterface: { type: DartPlayer, default: null },
 })
 

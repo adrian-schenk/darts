@@ -7,7 +7,7 @@
             :show-history="true" :dart-board-ref="dartboardRef ?? undefined" :uuid="playeruuid">
           </Player>
         </div>
-        <Dartboard ref="dartboardRef" class="flex-auto w-full" :click-to-add-marker="true"></Dartboard>
+        <Dartboard ref="dartboardRef" class="flex-auto w-full" :click-to-add-marker="!isSpectating"></Dartboard>
       </div>
 
     </div>
@@ -31,7 +31,7 @@ let { socket, status, data, send, close } = useSocket()
 const props = defineProps<{ gameId?: string }>()
 const mode = ref('')
 
-//const localPlayer = ref<any>(null)
+const isSpectating = ref(true)
 const players = ref<Map<string, any>>(new Map())
 const playerRefs = ref<Map<string, InstanceType<typeof Player> | null>>(new Map())
 const dartboardRef = ref<InstanceType<typeof Dartboard> | null>(null)
@@ -80,7 +80,7 @@ onMounted(() => {
           setTimeout(resolve, 2000)
           socket.once('join-game', (data: any) => {
             if (data.success) {
-              //localPlayer.value = data.playerId
+              isSpectating.value = data.spectating;
               resolve(null)
             } else if (!data.spectating) {
               router.replace('/local-game')

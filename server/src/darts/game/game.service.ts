@@ -23,6 +23,7 @@ import { UsersService } from 'src/users/users.service';
 export default class DartsGameService {
   public gameStates = new Map<string, GameState>();
   public joinedClients: Map<string, Array<Socket>> = new Map();
+  public spectatingClients: Map<string, Array<Socket>> = new Map();
 
   constructor(
     private connectionsService: ConnectionsService,
@@ -119,14 +120,15 @@ export default class DartsGameService {
       return;
     }
 
-    if (!this.joinedClients.has(gameId)) {
-      this.joinedClients.set(gameId, []);
-    }
-
     const gameState = await this.getGameState(gameId);
     socket.data.gameId = gameId;
-    this.joinedClients.get(gameId)?.push(socket);
     if (await this.userCanJoinGame(gameId, socket.data.user)) {
+      // Add to joined clients
+      if (!this.joinedClients.has(gameId)) {
+        this.joinedClients.set(gameId, []);
+      }
+
+      this.joinedClients.get(gameId)?.push(socket);
       let PlayerUuid = gameState?.addPlayer(
         socket.data.user,
         await this.playerStateFactory.createPlayerState(
@@ -137,6 +139,12 @@ export default class DartsGameService {
 
       socket.emit('join-game', { success: true, playerId: PlayerUuid });
     } else {
+      // Add to spectating clients
+      if (!this.spectatingClients.has(gameId)) {
+        this.spectatingClients.set(gameId, []);
+      }
+      this.spectatingClients.get(gameId)?.push(socket);
+
       socket.emit('join-game', {
         success: false,
         spectating: true,
@@ -212,7 +220,12 @@ export default class DartsGameService {
   }
 
   async broadcast(gameId: string, event: string, data: any) {
+    console.log(this.joinedClients, this.spectatingClients);
+    // Broadcast data to joined clients and spectators
     for (const clients of this.joinedClients.get(gameId) || []) {
+      clients.emit(event, data);
+    }
+    for (const clients of this.spectatingClients.get(gameId) || []) {
       clients.emit(event, data);
     }
   }
