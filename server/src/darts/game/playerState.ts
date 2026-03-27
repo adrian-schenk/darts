@@ -90,6 +90,10 @@ export class PlayerState extends JsonSerializable {
     return false;
   }
 
+  public setTurn() {
+    this.state = PlayerActionState.THROW_DARTS;
+  }
+
   protected setShowPlayerStat(stat: string, value: boolean) {
     this.showStats.player[stat] = value;
   }

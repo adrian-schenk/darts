@@ -192,7 +192,7 @@ const highlightedSegment = ref<string | null>('single-20')
 onMounted(() => {
   // For local games, theres only one dartboard, so create a "dummy" Dartplayer that listens to all events
   if (!playerInterface.value) {
-    playerInterface.value = new DartPlayer({ uuid: '', name: '', initialScore: 0 })
+    playerInterface.value = new DartPlayer({ uuid: '', name: '' })
     socket.on('player-event', (msg: any) => {
       for (const playerState of msg.playerStates ? Object.values(msg.playerStates) : [msg]) {
         if (playerState.state == PlayerActionState.REMOVE_DARTS) {

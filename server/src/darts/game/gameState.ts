@@ -145,8 +145,7 @@ export class GameState extends JsonSerializable {
     }
 
     this.currentPlayer = playerUuid;
-    this.playerStates.get(this.currentPlayer)!.state =
-      PlayerActionState.THROW_DARTS;
+    this.playerStates.get(this.currentPlayer)!.setTurn();
   }
 
   setState(state: GameStateType) {
