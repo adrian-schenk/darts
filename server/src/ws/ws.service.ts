@@ -18,7 +18,6 @@ export default class DartSocketService {
         this.dartsEventService,
       ),
       'join-game': this.gameService.joinDartGame.bind(this.gameService),
-      'sync-game': this.gameService.syncGameState.bind(this.gameService),
     };
   }
 
