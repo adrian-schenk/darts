@@ -1,6 +1,6 @@
 <template>
   <div class="p-6">
-    <div v-if="true" class="w-full mx-auto">
+    <div v-if="props.gameId" class="w-full mx-auto">
       <div class="flex flex-col gap-4 w-full h-full">
         <div class="flex flex-row gap-4">
           <Player
