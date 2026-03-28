@@ -1,5 +1,83 @@
 <template>
-  <div class="p-6">
+  <!-- Menu is active - show fullscreen menu -->
+  <div v-if="!props.gameId" class="min-h-screen w-full bg-gradient-to-br from-slate-900 to-slate-950">
+    <div class="p-6 max-w-4xl mx-auto">
+      <!-- Local Games Mode Selection -->
+      <template v-if="!selectedMode">
+        
+        <div class="text-2xl font-bold mb-2">Regular modes</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <button
+            v-for="mode in regularModes"
+            :key="mode.value"
+            @click="selectMode(mode, 'local')"
+            class="group relative bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-blue-600 rounded-lg p-6 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-500/50 transition-all duration-300 text-left"
+          >
+            <div class="absolute inset-0 bg-blue-500/0 group-hover:bg-blue-500/5 rounded-lg transition-colors"></div>
+            <h3 class="text-xl font-bold text-white mb-2 relative">{{ mode.emoji }} {{ mode.label }}</h3>
+            <p class="text-gray-400 relative text-sm mb-4 min-h-10">{{ mode.desc }}</p>
+            <div class="text-blue-400 text-xs font-semibold relative group-hover:text-blue-300">Play →</div>
+          </button>
+        </div>
+
+        <div class="text-2xl font-bold mb-2">Training modes</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <button
+            v-for="mode in trainingModes"
+            :key="mode.value"
+            @click="selectMode(mode, 'training')"
+            :class="['group relative bg-gradient-to-br from-slate-800 to-slate-900 border-2 rounded-lg p-6 hover:shadow-lg transition-all duration-300 text-left', getTrainingModeClass(mode.value)]"
+          >
+            <div :class="['absolute inset-0 rounded-lg transition-colors', getTrainingModeBgClass(mode.value)]"></div>
+            <h3 class="text-xl font-bold text-white mb-2 relative">{{ mode.emoji }} {{ mode.label }}</h3>
+            <p class="text-gray-400 relative text-sm mb-4 min-h-10">{{ mode.desc }}</p>
+            <div :class="['text-xs font-semibold relative', getTrainingModeTextClass(mode.value)]">Practice →</div>
+          </button>
+        </div>
+      </template>
+
+      <!-- Confirmation Screen -->
+      <div v-if="selectedMode" class="animate-in max-w-2xl mx-auto">
+        <button
+          @click="cancelSelection()"
+          class="text-sm text-gray-400 hover:text-gray-300 mb-6 flex items-center gap-2"
+        >
+          ← Back to Modes
+        </button>
+        
+        <div class="bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-gray-700 rounded-lg p-8">
+          <h2 class="text-3xl font-bold text-white mb-2">{{ selectedMode.emoji }} {{ selectedMode.label }}</h2>
+          <p class="text-gray-400 text-lg mb-6">{{ selectedMode.desc }}</p>
+          
+          <div v-if="selectedMode.details" class="bg-slate-900/50 rounded-lg p-4 mb-8">
+            <h4 class="text-white font-semibold mb-3">Game Details:</h4>
+            <ul class="space-y-2 text-gray-300 text-sm">
+              <li v-for="(detail, idx) in selectedMode.details" :key="idx" class="flex items-start gap-2">
+                <span class="text-blue-400 mt-1">•</span>
+                <span>{{ detail }}</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="flex gap-4">
+            <button
+              @click="cancelSelection()"
+              class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              @click="startGame()"
+              :disabled="isStarting"
+              class="flex-1 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 disabled:from-gray-600 disabled:to-gray-600 text-white font-bold py-3 rounded-lg transition-all disabled:cursor-not-allowed"
+            >
+              {{ isStarting ? 'Starting...' : 'Start Game' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div v-if="props.gameId" class="w-full mx-auto">
       <div class="flex flex-col gap-4 w-full h-full">
         <div class="flex flex-row gap-4">
@@ -23,7 +101,7 @@
       </div>
     </div>
 
-    <router-view />
+    <RouterView />
   </div>
 </template>
 
@@ -32,8 +110,10 @@ import Dartboard from '@/components/Dartboard.vue'
 import Player from '@/components/Player.vue'
 import getBearer from '@/lib/auth'
 import { PlayerActionState } from '@/lib/dartPlayer'
+import { getTrainingModeClass, getTrainingModeBgClass, getTrainingModeTextClass,regularModes, trainingModes } from '@/lib/modeInfo'
 import useSocket from '@/lib/socket'
 import router from '@/router'
+import { ProgramUpdateLevel } from 'typescript'
 import { onMounted, ref } from 'vue'
 
 let { socket, status, data, send, close } = useSocket()
@@ -46,7 +126,9 @@ const players = ref<Map<string, any>>(new Map())
 const playerRefs = ref<Map<string, InstanceType<typeof Player> | null>>(new Map())
 const dartboardRef = ref<InstanceType<typeof Dartboard> | null>(null)
 const playerRefSetters = new Map<string, (el: unknown) => void>()
-const dartboardRefSetters = new Map<string, (el: unknown) => void>()
+
+const selectedMode = ref<any>(null)
+const isStarting = ref(false)
 
 const setPlayerRef = (playerUuid: string, el: unknown) => {
   const nextRef = (el as InstanceType<typeof Player>) ?? null
@@ -61,6 +143,58 @@ const getPlayerRefSetter = (playerUuid: string) => {
     playerRefSetters.set(playerUuid, (el: unknown) => setPlayerRef(playerUuid, el))
   }
   return playerRefSetters.get(playerUuid)!
+}
+
+const selectMode = (mode: any, category: 'local' | 'training') => {
+  selectedMode.value = { ...mode, category }
+}
+
+const cancelSelection = () => {
+  selectedMode.value = null
+}
+
+const startGame = async () => {
+  if (!selectedMode.value) return
+
+  isStarting.value = true
+  try {
+    const { category, value } = selectedMode.value
+
+    let url = ''
+    let body = {}
+
+    if (category === 'local') {
+      // For local games, use the local game endpoint
+      url = import.meta.env.VITE_API_BASE_URL + '/create-local/'
+      body = { mode: value }
+    } else {
+      // For training, use the training endpoint
+      url = import.meta.env.VITE_API_BASE_URL + '/create-training/' + value
+      body = {}
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { Authorization: getBearer(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+
+    const data = await response.json()
+
+    if (data.gameId) {
+      // Navigate to the appropriate game view
+      const routeName = category === 'local' ? 'local-game-session' : 'training-session'
+      router.replace({ name: routeName, params: { gameId: data.gameId } })
+    } else {
+      console.error('Failed to start game:', data)
+      alert('Failed to start game. Please try again.')
+    }
+  } catch (err) {
+    console.error('Error starting game:', err)
+    alert('An error occurred while starting the game.')
+  } finally {
+    isStarting.value = false
+  }
 }
 
 onMounted(() => {
@@ -104,25 +238,23 @@ onMounted(() => {
       })
   }
 })
-
-const startSession = (mode: string) => {
-  fetch(import.meta.env.VITE_API_BASE_URL + '/create-local/', {
-    method: 'POST',
-    headers: { Authorization: getBearer(), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ mode }),
-  })
-    .then((res) => res.json())
-    .then((data) => {
-      if (data.gameId) {
-        router.replace({ name: 'local-game-session', params: { gameId: data.gameId } })
-      } else {
-        // handle error
-      }
-    })
-    .catch((err) => {
-      console.error('Error starting training session:', err)
-    })
-}
 </script>
+
+<style scoped>
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+</style>
 
 <style scoped></style>

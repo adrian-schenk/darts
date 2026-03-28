@@ -1,51 +1,52 @@
 <template>
-  <div class="p-6">
-    <RouterLink
-      v-if="mode"
-      to="/training"
-      class="text-sm text-gray-400 hover:text-gray-300 mb-4 inline-block"
-      >← Back</RouterLink
-    >
-    <div v-if="!mode" class="max-w-3xl mx-auto">
-      <h2 class="text-2xl font-semibold mb-4">Choose Training Mode</h2>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+  <RouterLink
+    v-if="mode"
+    to="/training"
+    class="text-sm text-gray-400 hover:text-gray-300 mb-4 inline-block"
+    >← Back</RouterLink
+  >
+  <div v-if="!mode" class="p-6 max-w-4xl mx-auto">
+    <h2 class="text-2xl font-bold mb-2">Choose Training Mode</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <button
-          v-for="m in modes"
-          @click="startSession(m.value)"
-          :key="m.value"
-          class="block mt-2 text-sm text-blue-400 hover:text-blue-300"
+          v-for="mode in trainingModes"
+          :key="mode.value"
+          @click="startSession(mode.value)"
+          :class="['group relative bg-gradient-to-br from-slate-800 to-slate-900 border-2 rounded-lg p-6 hover:shadow-lg transition-all duration-300 text-left', getTrainingModeClass(mode.value)]"
         >
-          Go to {{ m.label }}
+          <div :class="['absolute inset-0 rounded-lg transition-colors', getTrainingModeBgClass(mode.value)]"></div>
+          <h3 class="text-xl font-bold text-white mb-2 relative">{{ mode.emoji }} {{ mode.label }}</h3>
+          <p class="text-gray-400 relative text-sm mb-4 min-h-10">{{ mode.desc }}</p>
+          <div :class="['text-xs font-semibold relative', getTrainingModeTextClass(mode.value)]">Practice →</div>
         </button>
       </div>
-    </div>
-    <div v-if="mode" class="w-full mx-auto">
-      <div
-        v-for="[playeruuid, player] of players"
-        :key="playeruuid"
-        class="flex flex-row gap-4 w-full h-full"
-      >
-        <Player
-          class="flex-auto h-auto w-full"
-          :player="player"
-          :ref="getPlayerRefSetter(playeruuid)"
-          :show-history="true"
-          :dart-board-ref="dartboardRefs.get(playeruuid) ?? undefined"
-          :uuid="playeruuid"
-        >
-        </Player>
-        <div class="h-24 border-l border-gray-600 mx-4 self-center"></div>
-        <Dartboard
-          :ref="getDartboardRefSetter(playeruuid)"
-          class="flex-auto w-full"
-          :click-to-add-marker="localPlayer == playeruuid"
-          :player-interface="playerRefs.get(playeruuid)?.PlayerInterface ?? undefined"
-        ></Dartboard>
-      </div>
-    </div>
-
-    <router-view />
   </div>
+  <div v-if="mode" class="w-full mx-auto">
+    <div
+      v-for="[playeruuid, player] of players"
+      :key="playeruuid"
+      class="flex flex-row gap-4 w-full h-full"
+    >
+      <Player
+        class="flex-auto h-auto w-full"
+        :player="player"
+        :ref="getPlayerRefSetter(playeruuid)"
+        :show-history="true"
+        :dart-board-ref="dartboardRefs.get(playeruuid) ?? undefined"
+        :uuid="playeruuid"
+      >
+      </Player>
+      <div class="h-24 border-l border-gray-600 mx-4 self-center"></div>
+      <Dartboard
+        :ref="getDartboardRefSetter(playeruuid)"
+        class="flex-auto w-full"
+        :click-to-add-marker="localPlayer == playeruuid"
+        :player-interface="playerRefs.get(playeruuid)?.PlayerInterface ?? undefined"
+      ></Dartboard>
+    </div>
+  </div>
+
+  <RouterView />
 </template>
 
 <script setup lang="ts">
@@ -56,6 +57,8 @@ import useSocket from '@/lib/socket'
 import router from '@/router'
 import { useTrainingStore } from '@/stores/training/TrainingStore'
 import { onMounted, ref } from 'vue'
+import { RouterView, routerViewLocationKey } from 'vue-router'
+import { getTrainingModeClass, getTrainingModeBgClass, getTrainingModeTextClass,regularModes, trainingModes } from '@/lib/modeInfo'
 
 const trainingStore = useTrainingStore()
 
@@ -143,20 +146,6 @@ onMounted(() => {
   }
 })
 
-const modes = [
-  { value: 'target', label: 'Target Practice', desc: 'Work on hitting specific targets.' },
-  { value: 'around', label: 'Around The Clock', desc: 'Hit numbers in sequence.' },
-  { value: 'checkouts', label: 'Checkouts', desc: 'Practice finishing combinations.' },
-  { value: 'max', label: 'Max Score', desc: 'Aim for highest scoring.' },
-]
-
-const checkoutDifficulties = [
-  { value: 'auto', label: 'Auto', desc: 'Finish with any combination.' },
-  { value: 'easy', label: 'Easy', desc: 'Finish with simple combinations.' },
-  { value: 'medium', label: 'Medium', desc: 'Finish with moderate combinations.' },
-  { value: 'hard', label: 'Hard', desc: 'Finish with complex combinations.' },
-]
-
 const startSession = (mode: string) => {
   fetch(import.meta.env.VITE_API_BASE_URL + '/create-training/' + mode, {
     method: 'POST',
@@ -176,23 +165,6 @@ const startSession = (mode: string) => {
     })
 }
 
-const getDifficultyClass = (value: string) => {
-  if (value === 'easy')
-    return trainingStore.checkoutDifficulty === value
-      ? 'border-green-600 bg-green-500/20 text-white'
-      : 'border-green-400 text-white'
-  if (value === 'medium')
-    return trainingStore.checkoutDifficulty === value
-      ? 'border-yellow-600 bg-yellow-500/20 text-white'
-      : 'border-yellow-400 text-white'
-  if (value === 'hard')
-    return trainingStore.checkoutDifficulty === value
-      ? 'border-red-600 bg-red-500/20 text-white'
-      : 'border-red-400 text-white'
-  return trainingStore.checkoutDifficulty === value
-    ? 'border-blue-600 bg-blue-500/20 text-white'
-    : 'border-blue-500 text-white'
-}
 </script>
 
 <style scoped></style>
