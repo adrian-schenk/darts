@@ -20,7 +20,9 @@
     "format": "prettier --write --experimental-cli src/"
   },
   "dependencies": {
-    "@vueuse/core": "^14.2.0",
+    "@formkit/icons": "^1.7.2",
+    "@formkit/vue": "^1.7.2",
+    "@vueuse/core": "^14.2.1",
     "@vueuse/integrations": "^14.2.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -28,7 +30,7 @@
     "lucide-vue-next": "^0.563.0",
     "pinia": "^3.0.4",
     "pinia-plugin-persistedstate": "^4.7.1",
-    "reka-ui": "^2.8.0",
+    "reka-ui": "^2.9.2",
     "socket.io-client": "^4.8.3",
     "tailwind-merge": "^3.4.0",
     "tailwindcss-animate": "^1.0.7",
