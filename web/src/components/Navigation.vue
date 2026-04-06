@@ -23,7 +23,7 @@ const sections = [
   {
     label: 'Play',
     items: [
-      { path: '/local-game', label: 'Local Game', icon: 'M13 10V3L4 14h7v7l9-11h-7z' },
+      { path: '/local-game', label: 'Private Game', icon: 'M13 10V3L4 14h7v7l9-11h-7z' },
       {
         path: '/online-game',
         label: 'Online Game',

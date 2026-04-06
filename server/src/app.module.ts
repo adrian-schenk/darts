@@ -12,7 +12,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { MongooseModule } from '@nestjs/mongoose';
 import * as dotenv from 'dotenv';
 import { WsModule } from './ws/ws.module';
-import { RedisModule } from '@nestjs-modules/ioredis/dist/redis.module';
+import { RedisModule } from '@nestjs-modules/ioredis';
 dotenv.config({ path: join(__dirname, '..', '.env') });
 
 @Module({

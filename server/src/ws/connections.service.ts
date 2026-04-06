@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Socket } from 'node_modules/socket.io/dist/socket';
+import { Socket } from 'socket.io';
 import { JwtStrategy } from 'src/auth/jwt.strategy';
 import DartsGameService from 'src/darts/game/game.service';
 import { Inject, forwardRef } from '@nestjs/common';

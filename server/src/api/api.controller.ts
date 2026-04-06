@@ -9,6 +9,8 @@ import {
   UseGuards,
   Post,
   Req,
+  Body,
+  UsePipes,
 } from '@nestjs/common';
 import { ApiService, Checkout } from './api.service';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
@@ -16,6 +18,8 @@ import { Public } from 'src/auth/public.decorator';
 import DartsGameService from 'src/darts/game/game.service';
 import { GameEntity } from 'src/darts/game/entities/game.entity';
 import MatchmakingService from 'src/darts/matchmaking/mm.service';
+import { type CreateLocalGameDTO, createLocalGameSchema } from 'src/darts/game/dto/createLocalGameDTO';
+import { ZodValidationPipe } from 'src/pipes/ZodValidationPipe';
 
 @UseGuards(JwtAuthGuard)
 @Controller('api')
@@ -95,7 +99,8 @@ export class ApiController {
   }
 
   @Post('/create-local')
-  async createLocal(@Req() req) {
+  @UsePipes(new ZodValidationPipe(createLocalGameSchema))
+  async createLocal(@Req() req, @Body() body: CreateLocalGameDTO) {
     const game: GameEntity = await this.dartsGameService.createDartGame(
       req.user,
       'local-game',

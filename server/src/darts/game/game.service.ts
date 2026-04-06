@@ -11,7 +11,7 @@ import PlayerState, {
   PlayerActionState,
   TargetPlayerState,
 } from './playerState';
-import { InjectRedis } from '@nestjs-modules/ioredis/dist/redis.decorators';
+import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis/built/Redis';
 import { log } from 'console';
 import { GameState } from './gameState';
@@ -92,12 +92,16 @@ export default class DartsGameService {
     mode: string,
     status: string = 'open',
   ) {
+
+    const createdGame = new this.gameModel();
+    let res = await createdGame.save();
+;
+    return res;
+
     const playerIds = Array.isArray(players)
       ? players
       : Object.values(players).flat();
     const teams = !Array.isArray(players) ? players : undefined;
-    const createdGame = new this.gameModel({ mode, status, owner: 2 });
-    let res = await createdGame.save();
 
     if (!(await this.getGameState(res.gameId))) {
       let gameState: GameState =
@@ -108,7 +112,7 @@ export default class DartsGameService {
         BotUser,
         res.gameId,
       );
-      const PlayerUuid = gameState?.addPlayer(BotUser, ps, new BotPlayerController());
+      gameState?.addPlayer(BotUser, ps, new BotPlayerController());
 
       await this.setGameState(res.gameId, gameState);
     }

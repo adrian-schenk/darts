@@ -15,7 +15,7 @@
           :class="['group relative bg-gradient-to-br from-slate-800 to-slate-900 border-2 rounded-lg p-6 hover:shadow-lg transition-all duration-300 text-left', getTrainingModeClass(mode.value)]"
         >
           <div :class="['absolute inset-0 rounded-lg transition-colors', getTrainingModeBgClass(mode.value)]"></div>
-          <h3 class="text-xl font-bold text-white mb-2 relative">{{ mode.emoji }} {{ mode.label }}</h3>
+          <h3 class="text-xl font-bold text-white mb-2 relative">{{ mode.icon }} {{ mode.label }}</h3>
           <p class="text-gray-400 relative text-sm mb-4 min-h-10">{{ mode.desc }}</p>
           <div :class="['text-xs font-semibold relative', getTrainingModeTextClass(mode.value)]">Practice →</div>
         </button>

@@ -12,7 +12,7 @@ useSocket()
 <template>
   <div class="flex h-screen bg-slate-950">
     <Navigation />
-    <main class="w-full flex-1 overflow-auto">
+    <main class="w-full flex-1 overflow-auto bg-gradient-to-br from-slate-900 to-slate-950">
       <router-view :key="route.path" />
     </main>
   </div>

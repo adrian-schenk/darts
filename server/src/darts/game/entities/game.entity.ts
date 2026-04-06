@@ -7,25 +7,25 @@ export class GameEntity extends Document {
   @Prop({ default: uuidv4, unique: true })
   gameId: string;
 
-  @Prop({ required: true })
+  @Prop({ default: [] })
   playerIds: string[];
 
-  @Prop({ required: false, type: Object })
+  @Prop({ type: Object, default: {} })
   teamPlayers: { [team: string]: string[] };
 
-  @Prop({ required: true })
+  @Prop({ default: '' })
   mode: string;
 
-  @Prop({ required: true })
+  @Prop({ default: '' })
   status: string;
 
   @Prop({ default: Date.now })
   createdAt: Date;
 
-  @Prop()
+  @Prop({ default: Date.now })
   updatedAt?: Date;
 
-  @Prop()
+  @Prop({ default: null })
   owner: number;
 }
 

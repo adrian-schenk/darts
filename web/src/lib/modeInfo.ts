@@ -1,10 +1,25 @@
 
+import type { FormKitSchemaNode } from '@formkit/core'
 
-export const regularModes = [
+export type ModeSettings = Record<string, unknown>
+
+export interface GameMode {
+  value: string
+  label: string
+  icon: string
+  desc: string
+  details: string[]
+  settingsDefaults: ModeSettings
+  settingsSchema: FormKitSchemaNode[]
+}
+
+const defineSettingsSchema = <T extends FormKitSchemaNode[]>(schema: T) => schema
+
+export const regularModes: GameMode[] = [
   {
     value: 'standard',
     label: 'Standard Game',
-    emoji: '🎲',
+    icon: '🎲',
     desc: 'Classic darts gameplay. First to checkout wins.',
     details: [
       'Start at 501 (or 301) points',
@@ -12,11 +27,45 @@ export const regularModes = [
       'Finish with a double',
       'Perfect for friendly games',
     ],
+    settingsDefaults: {
+      scoreConfig: {
+        startingScore: 501,
+        checkoutMode: 'double-out'
+      },
+      opponent: 'local',
+    },
+    settingsSchema: defineSettingsSchema<FormKitSchemaNode[]>([
+      {
+        $formkit: 'scoreConfig',
+        name: 'scoreConfig',
+        label: false,
+        classes: {
+          'wrapper': 'max-w-[unset]!',
+        },
+        presets: [
+          501, 301
+        ],
+        showCustomOption: true,
+      },
+      {
+        $formkit: 'enemyConfig',
+        name: 'opponent',
+        label: false,
+        presets: [
+          { name: 'local', label: 'Local opponent', icon: '👤', description: 'Play against a local opponent' },
+          { name: 'friend', label: 'Friend', icon: '👥', description: 'Play against a friend online' },
+          { name: 'bot', label: 'Bot', icon: '🤖', description: 'Play against a bot' },
+        ],
+        classes: {
+          'wrapper': 'max-w-[unset]!',
+        }
+      }
+    ]),
   },
   {
     value: 'around-the-clock',
     label: 'Around The Clock',
-    emoji: '🔄',
+    icon: '🔄',
     desc: 'Hit all numbers in sequence from 1 to 20.',
     details: [
       'Hit each number from 1-20 in order',
@@ -24,11 +73,13 @@ export const regularModes = [
       'First player to complete the sequence wins',
       'Great for targeting practice',
     ],
+    settingsDefaults: {},
+    settingsSchema: [],
   },
   {
     value: 'bulling',
     label: 'Bulling',
-    emoji: '🎯',
+    icon: '🎯',
     desc: 'First to hit the bullseye wins.',
     details: [
       'All players aim for the bullseye',
@@ -36,11 +87,13 @@ export const regularModes = [
       'Quick and exciting',
       'Great for warm-ups',
     ],
+    settingsDefaults: {},
+    settingsSchema: [],
   },
   {
     value: 'max-score',
     label: 'Max Score',
-    emoji: '🏆',
+    icon: '🏆',
     desc: 'Highest score in one round wins.',
     details: [
       'Throw 3 darts and tally your score',
@@ -48,14 +101,16 @@ export const regularModes = [
       'Best out of 3 rounds',
       'Focus on high-value combinations',
     ],
+    settingsDefaults: {},
+    settingsSchema: [],
   },
 ]
 
-export const trainingModes = [
+export const trainingModes: GameMode[] = [
   {
     value: 'target',
     label: 'Target Practice',
-    emoji: '🎯',
+    icon: '🎯',
     desc: 'Work on hitting specific targets to improve accuracy.',
     details: [
       'Practice hitting dedicated target areas',
@@ -63,11 +118,13 @@ export const trainingModes = [
       'Track your accuracy improvements',
       'Various difficulty levels available',
     ],
+    settingsDefaults: {},
+    settingsSchema: [],
   },
   {
     value: 'around',
     label: 'Around The Clock',
-    emoji: '🔄',
+    icon: '🔄',
     desc: 'Hit numbers in sequence from 1 to 20.',
     details: [
       'Progress through numbers 1-20 in order',
@@ -75,11 +132,13 @@ export const trainingModes = [
       'Improves targeting across the board',
       'Track completion times',
     ],
+    settingsDefaults: {},
+    settingsSchema: [],
   },
   {
     value: 'checkouts',
     label: 'Checkouts',
-    emoji: '✓',
+    icon: '✓',
     desc: 'Practice finishing combinations and checkout strategies.',
     details: [
       'Learn popular checkout combinations',
@@ -87,11 +146,13 @@ export const trainingModes = [
       'Understand outs and doubles',
       'Essential skill for competitive play',
     ],
+    settingsDefaults: {},
+    settingsSchema: [],
   },
   {
     value: 'max',
     label: 'Max Score',
-    emoji: '🚀',
+    icon: '🚀',
     desc: 'Focus on high-scoring combinations and strategies.',
     details: [
       'Master the 180-point maximum',
@@ -99,6 +160,8 @@ export const trainingModes = [
       'Improve scoring consistency',
       'Build speed and accuracy',
     ],
+    settingsDefaults: {},
+    settingsSchema: [],
   },
 ]
 
@@ -130,3 +193,44 @@ export const checkoutDifficulties = [
   { value: 'medium', label: 'Medium', desc: 'Finish with moderate combinations.' },
   { value: 'hard', label: 'Hard', desc: 'Finish with complex combinations.' },
 ]
+
+type BotDifficulty = 'auto' | 'easy' | 'medium' | 'hard'
+
+type DifficultyColorSet = {
+  normal: string
+  hovered: string
+  selected: string
+}
+
+export const getBotDifficultyColors = (difficulty: BotDifficulty): DifficultyColorSet => {
+
+  if (difficulty === 'auto') {
+    return {
+      normal: 'border-gray-600 bg-gray-950/20 text-gray-200',
+      hovered: 'hover:border-gray-400 hover:bg-gray-900/35 hover:text-gray-100',
+      selected: 'border-gray-300 bg-gray-500/20 text-gray-100 shadow-gray-500/30',
+    }
+  }
+
+  if (difficulty === 'easy') {
+    return {
+      normal: 'border-emerald-600 bg-emerald-950/20 text-emerald-200',
+      hovered: 'hover:border-emerald-400 hover:bg-emerald-900/35 hover:text-emerald-100',
+      selected: 'border-emerald-300 bg-emerald-500/20 text-emerald-100 shadow-emerald-500/30',
+    }
+  }
+
+  if (difficulty === 'hard') {
+    return {
+      normal: 'border-rose-600 bg-rose-950/20 text-rose-200',
+      hovered: 'hover:border-rose-400 hover:bg-rose-900/35 hover:text-rose-100',
+      selected: 'border-rose-300 bg-rose-500/20 text-rose-100 shadow-rose-500/30',
+    }
+  }
+
+  return {
+    normal: 'border-amber-600 bg-amber-950/20 text-amber-200',
+    hovered: 'hover:border-amber-400 hover:bg-amber-900/35 hover:text-amber-100',
+    selected: 'border-amber-300 bg-amber-500/20 text-amber-100 shadow-amber-500/30',
+  }
+}
