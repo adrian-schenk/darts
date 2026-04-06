@@ -30,12 +30,6 @@ export class ApiController {
     private readonly matchmakingService: MatchmakingService,
   ) {}
 
-  @Public()
-  @Get('/test')
-  findAll(): string {
-    return 'This action returns all cats';
-  }
-
   @Get('/checkouts/:score')
   getCheckouts(
     @Param('score', ParseIntPipe) score: number,
