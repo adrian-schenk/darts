@@ -43,6 +43,7 @@ export default class DartsGameService {
 
   async setGameState(gameId: string, state: GameState) {
     this.gameStates.set(gameId, state);
+    if (!state) return;
     await this.redis.set(`gameState:${gameId}`, state.toRealJSON());
   }
 

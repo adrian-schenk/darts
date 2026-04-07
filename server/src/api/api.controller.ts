@@ -11,6 +11,8 @@ import {
   Req,
   Body,
   UsePipes,
+  Inject,
+  Headers
 } from '@nestjs/common';
 import { ApiService, Checkout } from './api.service';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
@@ -20,6 +22,12 @@ import { GameEntity } from 'src/darts/game/entities/game.entity';
 import MatchmakingService from 'src/darts/matchmaking/mm.service';
 import { type CreateLocalGameDTO, createLocalGameSchema } from 'src/darts/game/dto/createLocalGameDTO';
 import { ZodValidationPipe } from 'src/pipes/ZodValidationPipe';
+import DartSocketService from 'src/ws/ws.service';
+import ConnectionsService from 'src/ws/connections.service';
+import { GameState } from 'src/darts/game/gameState';
+import GameStateFactory from 'src/darts/game/gameFactory';
+import PlayerStateFactory from 'src/darts/game/stateFactory';
+import { HumanPlayerController } from 'src/darts/game/controllers/humanPlayer.controller';
 
 @UseGuards(JwtAuthGuard)
 @Controller('api')
@@ -28,6 +36,10 @@ export class ApiController {
     private readonly apiService: ApiService,
     private readonly dartsGameService: DartsGameService,
     private readonly matchmakingService: MatchmakingService,
+    private readonly dartSocketService: DartSocketService,
+    private readonly connectionsService: ConnectionsService,
+    private readonly gameStateFactory: GameStateFactory,
+    private readonly playerStateFactory: PlayerStateFactory,
   ) {}
 
   @Get('/checkouts/:score')
@@ -94,11 +106,29 @@ export class ApiController {
 
   @Post('/create-local')
   @UsePipes(new ZodValidationPipe(createLocalGameSchema))
-  async createLocal(@Req() req, @Body() body: CreateLocalGameDTO) {
+  async createLocal(@Req() req, @Headers() headers: any, @Body() body: CreateLocalGameDTO) {
+
+    if (this.connectionsService.getClientById(headers['x-socket-id']) == null || this.connectionsService.getClientById(headers['x-socket-id'])?.data.userId != req.user.id) {
+      throw new HttpException('Unauthorized: Socket ID is missing or does not match the authenticated user', HttpStatus.BAD_REQUEST);
+    }
+
     const game: GameEntity = await this.dartsGameService.createDartGame(
       req.user,
       'local-game',
     );
+
+    await game.set('owner', req.user.id).save();
+
+    if (!(await this.dartsGameService.getGameState(game.gameId))) {
+      let gameState: GameState =
+        await this.gameStateFactory.createGameStateFromMode('', game.gameId);
+      gameState.joinable = false;
+
+      gameState.addPlayer(req.user.id, await this.playerStateFactory.createPlayerState(req.user, gameState.gameId), new HumanPlayerController());
+      gameState.addPlayer(req.user.id, await this.playerStateFactory.createPlayerState(req.user, gameState.gameId), new HumanPlayerController());
+
+      await this.dartsGameService.setGameState(game.gameId, gameState);
+    }
 
     return { gameId: game.gameId };
   }
