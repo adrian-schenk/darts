@@ -3,6 +3,7 @@ import { io } from 'socket.io-client'
 import { useCookies } from '@vueuse/integrations/useCookies'
 
 let socket: any = null
+let socketId = ref('')
 const status = ref('disconnected')
 const data = reactive<any>({})
 let users = 0
@@ -34,6 +35,7 @@ export default function useSocket() {
 
     socket.on('connected', (msg: any) => {
       status.value = 'connected'
+      socketId.value = socket.id
     })
 
     socket.on('disconnect', () => {
@@ -83,7 +85,7 @@ export default function useSocket() {
   })
 
   return {
-    socketId: socket?.id,
+    socketId: socketId,
     socket,
     status,
     data,

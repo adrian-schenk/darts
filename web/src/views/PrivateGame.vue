@@ -94,7 +94,7 @@ import router from '@/router'
 import { FormKit, FormKitSchema } from '@formkit/vue'
 import { onMounted, ref, watch } from 'vue'
 
-let { socket, status, data, send, close } = useSocket()
+let { socketId, socket, status, data, send, close } = useSocket()
 
 const props = defineProps<{ gameId?: string }>()
 const mode = ref('')
@@ -155,10 +155,10 @@ const startGame = async () => {
       url = import.meta.env.VITE_API_BASE_URL + '/create-training/' + value
       body = { settings: selectedModeSettings.value }
     }
-
+    
     const response = await fetch(url, {
       method: 'POST',
-      headers: { Authorization: getBearer(), 'Content-Type': 'application/json' },
+      headers: { Authorization: getBearer(), 'Content-Type': 'application/json', 'X-Socket-Id': socketId?.value ?? '' },
       body: JSON.stringify(body),
     })
 
