@@ -42,7 +42,6 @@
           <FormKit type="form" v-model="selectedModeSettings" :actions="false">
             <FormKitSchema :schema="selectedMode.settingsSchema" />
           </FormKit>
-          <pre>{{ selectedModeSettings }}</pre>
 
           <div class="flex gap-4">
             <button @click="cancelSelection()"

@@ -19,6 +19,7 @@ const router = createRouter({
       component: () => import('../layouts/MainLayout.vue'),
       children: [
         { path: 'home', component: () => import('../views/Dashboard.vue') },
+        { name: 'game', path: 'game/:gameId', component: () => import('../views/Game.vue'), props: true },
         { path: 'local-game', component: () => import('../views/PrivateGame.vue') },
         {
           name: 'local-game-session',
