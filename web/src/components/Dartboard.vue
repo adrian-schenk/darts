@@ -3,7 +3,7 @@
     v-if="playerInterface && playerInterface.state !== PlayerActionState.IDLE"
     class="dartboard-wrapper relative overflow-hidden"
   >
-    <div class="dartboard-container">
+    <div class="dartboard-container content-center">
       <svg ref="svgRef" viewBox="0 0 500 500" class="dartboard-svg" @click="handleBoardClick">
         <defs>
           <filter id="sisalTexture" x="0%" y="0%" width="100%" height="100%">

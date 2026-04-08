@@ -1,29 +1,15 @@
 <template>
-  <div v-if="gameId" class="w-full mx-auto">
-    <div
-      v-for="[playeruuid, player] of players"
-      :key="playeruuid"
-      class="flex flex-row gap-4 w-full h-full"
-    >
-      <Player
-        class="flex-auto h-auto w-full"
-        :player="player"
-        :ref="getPlayerRefSetter(playeruuid)"
-        :show-history="true"
-        :dart-board-ref="dartboardRefs.get(playeruuid) ?? undefined"
-        :uuid="playeruuid"
-      >
-      </Player>
-      <div class="h-24 border-l border-gray-600 mx-4 self-center"></div>
-      <Dartboard
-        :ref="getDartboardRefSetter(playeruuid)"
-        class="flex-auto w-full"
-        :click-to-add-marker="localPlayer == playeruuid"
-        :player-interface="playerRefs.get(playeruuid)?.PlayerInterface ?? undefined"
-      ></Dartboard>
+  <div v-if="props.gameId" class="w-full mx-auto">
+    <div class="flex flex-col gap-4 w-full h-full flex-auto">
+      <div class="flex flex-row gap-4">
+        <Player v-for="[playeruuid, player] of players" :key="playeruuid" class="flex-auto h-auto w-full"
+          :player="player" :ref="getPlayerRefSetter(playeruuid)" :show-history="true"
+          :dart-board-ref="dartboardRef ?? undefined" :uuid="playeruuid">
+        </Player>
+      </div>
+      <Dartboard ref="dartboardRef" class="flex-auto w-full" :click-to-add-marker="true"></Dartboard>
     </div>
   </div>
-
   <RouterView />
 </template>
 
@@ -35,19 +21,17 @@ import useSocket from '@/lib/socket'
 import router from '@/router'
 import { onMounted, ref } from 'vue'
 import { RouterView, routerViewLocationKey } from 'vue-router'
-import { getTrainingModeClass, getTrainingModeBgClass, getTrainingModeTextClass,regularModes, trainingModes } from '@/lib/modeInfo'
 
 let { socket, status, data, send, close } = useSocket()
 
 const props = defineProps<{ gameId?: string }>()
 const mode = ref('')
-console.log(props)
+
 const localPlayer = ref<any>(null)
 const players = ref<Map<string, any>>(new Map())
 const playerRefs = ref<Map<string, InstanceType<typeof Player> | null>>(new Map())
-const dartboardRefs = ref<Map<string, InstanceType<typeof Dartboard> | null>>(new Map())
+const dartboardRef = ref<InstanceType<typeof Dartboard> | null>(null)
 const playerRefSetters = new Map<string, (el: unknown) => void>()
-const dartboardRefSetters = new Map<string, (el: unknown) => void>()
 
 const setPlayerRef = (playerUuid: string, el: unknown) => {
   const nextRef = (el as InstanceType<typeof Player>) ?? null
@@ -57,26 +41,11 @@ const setPlayerRef = (playerUuid: string, el: unknown) => {
   playerRefs.value.set(playerUuid, nextRef)
 }
 
-const setDartboardRef = (playerUuid: string, el: unknown) => {
-  const nextRef = (el as InstanceType<typeof Dartboard>) ?? null
-  if (dartboardRefs.value.get(playerUuid) === nextRef) {
-    return
-  }
-  dartboardRefs.value.set(playerUuid, nextRef)
-}
-
 const getPlayerRefSetter = (playerUuid: string) => {
   if (!playerRefSetters.has(playerUuid)) {
     playerRefSetters.set(playerUuid, (el: unknown) => setPlayerRef(playerUuid, el))
   }
   return playerRefSetters.get(playerUuid)!
-}
-
-const getDartboardRefSetter = (playerUuid: string) => {
-  if (!dartboardRefSetters.has(playerUuid)) {
-    dartboardRefSetters.set(playerUuid, (el: unknown) => setDartboardRef(playerUuid, el))
-  }
-  return dartboardRefSetters.get(playerUuid)!
 }
 
 onMounted(() => {

@@ -14,16 +14,16 @@ export interface DartPlayerInfo {
   name: string
   throwsPerTurn?: number
   dartboardRef?:
-    | {
-        addHitMarker?: (x: number, y: number) => void
-        clearMarkers?: () => void
-      }
-    | {
-        value?: {
-          addHitMarker?: (x: number, y: number) => void
-          clearMarkers?: () => void
-        }
-      }
+  | {
+    addHitMarker?: (x: number, y: number) => void
+    clearMarkers?: () => void
+  }
+  | {
+    value?: {
+      addHitMarker?: (x: number, y: number) => void
+      clearMarkers?: () => void
+    }
+  }
 }
 
 export class DartPlayer {
@@ -31,7 +31,9 @@ export class DartPlayer {
 
   boardRef: any = null
 
-  score = ref(0)
+  currentTarget = ref<string | null>(null)
+  currentTargetHit = ref<boolean>(false)
+  score = ref<number | null>(null)
   throws = ref<[Throw, Throw, Throw]>([
     {
       field: '',
@@ -60,7 +62,7 @@ export class DartPlayer {
   constructor(public info: DartPlayerInfo) {
     this.uuid = info.uuid
 
-    const { socket, status, data, send, close } = useSocket()
+    const { socket } = useSocket()
     this.socket = socket
 
     if (info.dartboardRef) this.boardRef = info.dartboardRef
@@ -77,6 +79,10 @@ export class DartPlayer {
       t.score = this.getFieldScore(t.field)
       t.field = this.getFieldName(t.field)
       this.addThrow(t)
+
+      if (this.currentTarget.value) {
+        this.currentTargetHit.value = t.field === this.getFieldName(this.currentTarget.value)
+      }
     }
   }
 
@@ -96,22 +102,34 @@ export class DartPlayer {
     this.state.value = playerGameState.state
     this.stats.value = playerGameState.stats
 
-    this.score.value = playerGameState.score
+    if (this.currentTarget.value) {
+      setTimeout(() => {
+        this.currentTargetHit.value = false
+        this.currentTarget.value = playerGameState.currentTarget ?? null
+      }, 1500)
+    } else {
+      this.currentTarget.value = playerGameState.currentTarget ?? null;
+    }
+
+    this.score.value = playerGameState.score ?? null
     this.throws.value = [
       { field: '', score: 0 },
       { field: '', score: 0 },
       { field: '', score: 0 },
     ]
-    for (let i = 0; i < playerGameState.currentThrows.length; i++) {
-      const t = playerGameState.currentThrows[i]
-      this.throws.value[i] = {
-        field: t.field,
-        score: t.score,
-        invalid: t.invalid,
+
+    if (playerGameState.currentThrows) {
+      for (let i = 0; i < playerGameState.currentThrows.length; i++) {
+        const t = playerGameState.currentThrows[i]
+        this.throws.value[i] = {
+          field: t.field,
+          score: t.score,
+          invalid: t.invalid,
+        }
       }
     }
 
-    this.checkoutCombination.value = playerGameState.checkoutCombination
+    this.checkoutCombination.value = playerGameState.checkoutCombination ?? [];
   }
 
   private getBoard() {
@@ -166,6 +184,8 @@ export class DartPlayer {
     if (stat === 'avg_6') return 'Average (6 darts)'
     if (stat === 'percentage_checkout') return 'Checkout %'
     if (stat === 'max_checkout') return 'Highest Checkout'
+    if (stat === 'count_throws') return 'Total throws'
+    if (stat === 'count_hits') return 'Total hits'
     return stat.charAt(0).toUpperCase() + stat.slice(1)
   }
 
@@ -184,5 +204,9 @@ export class DartPlayer {
 
   getPlayerStat(stat: string) {
     return this.stats.value?.[stat] ? this.stats.value?.[stat].value : 'N/A'
+  }
+
+  getCurrentTarget() {
+    return this.currentTarget.value ? this.getFieldName(this.currentTarget.value) : '';
   }
 }

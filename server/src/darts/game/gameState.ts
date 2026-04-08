@@ -106,6 +106,7 @@ export class GameState extends JsonSerializable {
     },
     { toClassOnly: true },
   )
+  @Exclude({ toPlainOnly: true })
   controllers: Map<string, PlayerController> = new Map();
 
   @Exclude({ toPlainOnly: true })

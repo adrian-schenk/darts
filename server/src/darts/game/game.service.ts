@@ -153,7 +153,9 @@ export default class DartsGameService {
       );
       const PlayerUuid = gameState?.addPlayer(socket.data.user, ps, new HumanPlayerController());
       
-      gameState?.setTurn(PlayerUuid ?? '');
+      if (gameState?.currentPlayer == null) {
+        gameState?.setTurn(PlayerUuid ?? '');
+      }
 
       socket.emit('join-game', { success: true, playerId: PlayerUuid });
     } else {

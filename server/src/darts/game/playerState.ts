@@ -43,6 +43,9 @@ export class PlayerState extends JsonSerializable {
   @Exclude({ toPlainOnly: true })
   controllerType: 'human' | 'bot' = 'human';
 
+  @Exclude()
+  locked: boolean = false;
+
   state: PlayerActionState;
 
   showStats: any = {
@@ -131,6 +134,30 @@ export class PlayerState extends JsonSerializable {
     if (type === 'triple') return num * 3;
     return 0;
   };
+
+  @Exclude()
+  public getRandomField() {
+    let fields = [
+      'bullseye',
+      'outer-bull',
+    ]
+
+    for (let i = 1; i <= 20; i++) {
+      fields.push(`single-${i}`);
+      fields.push(`double-${i}`);
+      fields.push(`triple-${i}`);
+    }
+
+    return fields[Math.floor(Math.random() * fields.length)];
+  }
+
+  @Exclude()
+  public lock(millis: number) {
+    this.locked = true;
+    setTimeout(() => {
+      this.locked = false;
+    }, millis);
+  }
 }
 
 export class DefaultPlayerState extends PlayerState {
@@ -247,7 +274,16 @@ export class TargetPlayerState extends PlayerState {
 
   constructor() {
     super();
-    this.currentTarget = 'bullseye';
+    this.setShowPlayerStat('showName', false);
+    this.setShowPlayerStat('showSets', false);
+    this.setShowPlayerStat('showLegs', false);
+    this.setShowDataStat('avg', false);
+    this.setShowDataStat('avg_6', false);
+    this.setShowDataStat('max_checkout', false);
+    this.setShowDataStat('percentage_checkout', false);
+    this.setShowDataStat('count_throws', true);
+    this.setShowDataStat('count_hits', true);
+    this.currentTarget = this.getRandomField();
   }
 
   static create(user: User, gameId: string): PlayerState {
@@ -255,6 +291,17 @@ export class TargetPlayerState extends PlayerState {
     state.userId = user.id;
     state.gameId = gameId;
     return state;
+  }
+
+  public onDartHit(roundId: string, throwInfo: any): any {
+    super.onDartHit(roundId, throwInfo);
+
+    throwInfo.field = throwInfo.field.replace('-inner', '').replace('-outer', '');
+    if (throwInfo.field === this.currentTarget) {
+      this.currentTarget = this.getRandomField();
+      this.stats.trackStat('count_hits', StatType.COUNT, 1);
+    }
+    this.stats.trackStat('count_throws', StatType.COUNT, 1);
   }
 }
 

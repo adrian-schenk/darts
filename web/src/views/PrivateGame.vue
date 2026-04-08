@@ -1,6 +1,6 @@
 <template>
   <!-- Menu is active - show fullscreen menu -->
-  <div v-if="!props.gameId" class="min-h-screen w-full bg-gradient-to-br from-slate-900 to-slate-950">
+  <div class="min-h-screen w-full bg-gradient-to-br from-slate-900 to-slate-950">
     <div class="p-6 max-w-4xl mx-auto">
       <!-- Local Games Mode Selection -->
       <template v-if="!selectedMode">
@@ -56,19 +56,6 @@
         </div>
       </div>
     </div>
-
-    <div v-if="props.gameId" class="w-full mx-auto">
-      <div class="flex flex-col gap-4 w-full h-full">
-        <div class="flex flex-row gap-4">
-          <Player v-for="[playeruuid, player] of players" :key="playeruuid" class="flex-auto h-auto w-full"
-            :player="player" :ref="getPlayerRefSetter(playeruuid)" :show-history="true"
-            :dart-board-ref="dartboardRef ?? undefined" :uuid="playeruuid">
-          </Player>
-        </div>
-        <Dartboard ref="dartboardRef" class="flex-auto w-full" :click-to-add-marker="!isSpectating"></Dartboard>
-      </div>
-    </div>
-
     <RouterView />
   </div>
 </template>
@@ -95,7 +82,6 @@ import { onMounted, ref, watch } from 'vue'
 
 let { socketId, socket, status, data, send, close } = useSocket()
 
-const props = defineProps<{ gameId?: string }>()
 const mode = ref('')
 
 const isSpectating = ref(true)
@@ -164,9 +150,7 @@ const startGame = async () => {
     const data = await response.json()
 
     if (data.gameId) {
-      // Navigate to the appropriate game view
-      const routeName = category === 'local' ? 'local-game-session' : 'training-session'
-      router.replace({ name: routeName, params: { gameId: data.gameId } })
+      router.replace({ path: '/game/' + data.gameId })
     } else {
       console.error('Failed to start game:', data)
       alert('Failed to start game. Please try again.')
@@ -179,47 +163,6 @@ const startGame = async () => {
   }
 }
 
-onMounted(() => {
-  if (props.gameId) {
-    fetch(import.meta.env.VITE_API_BASE_URL + '/game/' + props.gameId, {
-      method: 'GET',
-      headers: { Authorization: getBearer(), 'Content-Type': 'application/json' },
-    })
-      .then((res) => res.json())
-      .then(async (data) => {
-        if (data.gameId) {
-          if (data.mode) {
-            mode.value = data.mode
-          }
-        }
-
-        socket.on('game-update', (gameState: any) => {
-          for (const [uuid, player] of Object.entries(gameState)) {
-            players.value.set(uuid, player)
-          }
-        })
-
-        await send('join-game', { gameId: props.gameId })
-
-        // wait for join-game response
-        await new Promise((resolve) => {
-          setTimeout(resolve, 2000)
-          socket.once('join-game', (data: any) => {
-            if (data.success) {
-              isSpectating.value = data.spectating
-              resolve(null)
-            } else if (!data.spectating) {
-              router.replace('/local-game')
-              resolve(null)
-            }
-          })
-        })
-      })
-      .catch((err) => {
-        console.error('Error fetching game data:', err)
-      })
-  }
-})
 </script>
 
 <style scoped>

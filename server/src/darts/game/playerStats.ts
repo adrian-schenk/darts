@@ -6,6 +6,7 @@ export enum StatType {
   AVG,
   MAX,
   MIN,
+  COUNT,
   PERCENTAGE,
 }
 
@@ -39,7 +40,7 @@ export default class PlayerStats {
     }
   }
 
-  trackStat(name: string, type: StatType, value: number) {
+  trackStat(name: string, type: StatType, value?: number) {
     switch (type) {
       case StatType.VAL:
         this.stats[name] = {
@@ -48,17 +49,25 @@ export default class PlayerStats {
         };
         break;
       case StatType.MAX:
-        value = Math.max(this.stats[name]?.value ?? 0, value);
+        value = Math.max(this.stats[name]?.value ?? 0, value ?? 0);
         this.stats[name] = {
           type,
           value,
         };
         break;
       case StatType.MIN:
-        value = Math.min(this.stats[name]?.value ?? Infinity, value);
+        value = Math.min(this.stats[name]?.value ?? Infinity, value ?? 0);
         this.stats[name] = {
           type,
           value,
+        };
+        break;
+      case StatType.COUNT:
+        const c = this.stats[name]?.count ?? 0;
+        this.stats[name] = {
+          type,
+          value: c + 1,
+          count: c + 1,
         };
         break;
       case StatType.PERCENTAGE:
@@ -66,9 +75,9 @@ export default class PlayerStats {
         const success = this.stats[name]?.success ?? 0;
         this.stats[name] = {
           type,
-          value: (success + value) / (total + 1),
+          value: (success + (value ?? 0)) / (total + 1),
           total: total + 1,
-          success: success + (value > 0 ? 1 : 0),
+          success: success + ((value ?? 0) > 0 ? 1 : 0),
         };
         break;
       case StatType.AVG:
@@ -77,9 +86,9 @@ export default class PlayerStats {
         const sum = this.stats[name]?.sum ?? 0;
         this.stats[name] = {
           type,
-          value: (sum + value) / (count + 1),
+          value: (sum + (value ?? 0)) / (count + 1),
           count: count + 1,
-          sum: sum + value,
+          sum: sum + (value ?? 0),
         };
         break;
     }
