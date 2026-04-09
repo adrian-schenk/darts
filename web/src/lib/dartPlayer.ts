@@ -55,7 +55,7 @@ export class DartPlayer {
 
   state = ref<PlayerActionState>(PlayerActionState.THROW_DARTS)
 
-  stats: any = {}
+  stats = ref<any>(null)
 
   socket: any = null
 
