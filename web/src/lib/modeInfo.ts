@@ -28,25 +28,15 @@ export const regularModes: GameMode[] = [
       'Perfect for friendly games',
     ],
     settingsDefaults: {
-      scoreConfig: {
+      gameConfig: {
         startingScore: 501,
-        checkoutMode: 'double-out'
+        checkoutMode: 'double-out',
+        legs: 3,
+        sets: 2
       },
       opponent: 'local',
     },
     settingsSchema: defineSettingsSchema<FormKitSchemaNode[]>([
-      {
-        $formkit: 'scoreConfig',
-        name: 'scoreConfig',
-        label: false,
-        classes: {
-          'wrapper': 'max-w-[unset]!',
-        },
-        presets: [
-          501, 301
-        ],
-        showCustomOption: true,
-      },
       {
         $formkit: 'enemyConfig',
         name: 'opponent',
@@ -59,7 +49,20 @@ export const regularModes: GameMode[] = [
         classes: {
           'wrapper': 'max-w-[unset]!',
         }
-      }
+      },
+      {
+        $formkit: 'scoreConfig',
+        id: 'gameConfig',
+        name: 'gameConfig',
+        label: false,
+        classes: {
+          'wrapper': 'max-w-[unset]!',
+        },
+        presets: [
+          501, 301
+        ],
+        showCustomOption: true,
+      },
     ]),
   },
   {

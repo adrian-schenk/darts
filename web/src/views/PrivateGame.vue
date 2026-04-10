@@ -143,7 +143,7 @@ const startGame = async () => {
     
     const response = await fetch(url, {
       method: 'POST',
-      headers: { Authorization: getBearer(), 'Content-Type': 'application/json', 'X-Socket-Id': socketId?.value ?? '' },
+      headers: { Authorization: getBearer(), 'Content-Type': 'application/json', 'X-Socket-Id': socket.id ?? '' },
       body: JSON.stringify(body),
     })
 
