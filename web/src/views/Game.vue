@@ -7,7 +7,7 @@
           :dart-board-ref="dartboardRef ?? undefined" :uuid="playeruuid">
         </Player>
       </div>
-      <Dartboard ref="dartboardRef" class="flex-auto w-full" :click-to-add-marker="true"></Dartboard>
+      <Dartboard ref="dartboardRef" class="flex-auto w-full" :click-to-add-marker="!spectating"></Dartboard>
     </div>
   </div>
   <RouterView />
@@ -28,6 +28,7 @@ const props = defineProps<{ gameId?: string }>()
 const mode = ref('')
 
 const localPlayer = ref<any>(null)
+const spectating = ref<boolean>(false)
 const players = ref<Map<string, any>>(new Map())
 const playerRefs = ref<Map<string, InstanceType<typeof Player> | null>>(new Map())
 const dartboardRef = ref<InstanceType<typeof Dartboard> | null>(null)
@@ -61,7 +62,7 @@ onMounted(() => {
             mode.value = data.mode
           }
         }
-
+        
         socket.on('game-update', (gameState: any) => {
           for (const [uuid, player] of Object.entries(gameState)) {
             players.value.set(uuid, player)
@@ -77,8 +78,11 @@ onMounted(() => {
             if (data.success) {
               localPlayer.value = data.playerId
               resolve(null)
+            } else if (data.spectating) {
+              spectating.value = true
+              resolve(null)
             } else if (!data.spectating) {
-              router.replace('/training')
+              router.replace('/')
               resolve(null)
             }
           })

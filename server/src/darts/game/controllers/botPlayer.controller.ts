@@ -148,10 +148,17 @@ export interface BotProfile {
   maxDelayMs: number;
 }
 
+export enum BotDifficulty {
+  auto = 'auto',
+  easy = 'easy',
+  medium = 'medium',
+  hard = 'hard',
+}
+
 export class BotPlayerController implements PlayerController {
   readonly type = 'bot' as const;
 
-  constructor() { }
+  constructor(public difficulty: BotDifficulty = BotDifficulty.auto) { }
 
   async planTurn(_gameState: GameState) {
     setTimeout(async () => {

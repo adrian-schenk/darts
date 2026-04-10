@@ -28,7 +28,7 @@ import { GameState } from 'src/darts/game/gameState';
 import GameStateFactory from 'src/darts/game/gameFactory';
 import PlayerStateFactory from 'src/darts/game/stateFactory';
 import { HumanPlayerController } from 'src/darts/game/controllers/humanPlayer.controller';
-import { BotPlayerController } from 'src/darts/game/controllers/botPlayer.controller';
+import { BotDifficulty, BotPlayerController } from 'src/darts/game/controllers/botPlayer.controller';
 import { BotUser } from 'src/darts/game/controllers/playerController.interface';
 
 @UseGuards(JwtAuthGuard)
@@ -127,7 +127,7 @@ export class ApiController {
       gameState.joinable = false;
 
       let player1Controller = new HumanPlayerController();
-      let player2Controller = body.settings.opponent.type === 'bot' ? new BotPlayerController() : new HumanPlayerController();
+      let player2Controller = body.settings.opponent.type === 'bot' ? new BotPlayerController(body.settings.opponent.difficulty ?? BotDifficulty.auto) : new HumanPlayerController();
 
       let player2User = body.settings.opponent.type === 'bot' ? BotUser : req.user;
 
@@ -160,7 +160,6 @@ export class ApiController {
     return { message: `User ${user.username} joined ${mode} queue` };
   }
 
-  @Public()
   @Get('/queue/:mode')
   async getQueue(@Param('mode') mode: string) {
     const queue = await this.matchmakingService.getQueue(mode);
