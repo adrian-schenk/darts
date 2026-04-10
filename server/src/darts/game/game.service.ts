@@ -100,27 +100,6 @@ export default class DartsGameService {
     let res = await createdGame.save();
 
     return res;
-
-    const playerIds = Array.isArray(players)
-      ? players
-      : Object.values(players).flat();
-    const teams = !Array.isArray(players) ? players : undefined;
-
-    if (!(await this.getGameState(res.gameId))) {
-      let gameState: GameState =
-        await this.gameStateFactory.createGameStateFromMode(mode, res.gameId);
-      gameState.joinable = false;
-
-      const ps = await this.playerStateFactory.createPlayerState(
-        BotUser,
-        res.gameId,
-      );
-      gameState?.addPlayer(BotUser, ps, new BotPlayerController());
-
-      await this.setGameState(res.gameId, gameState);
-    }
-
-    return res;
   }
 
   async getDartGame(gameId: string): Promise<GameEntity | null> {
