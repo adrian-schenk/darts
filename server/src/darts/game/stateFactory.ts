@@ -34,4 +34,15 @@ export default class PlayerStateFactory {
 
     return playerState;
   }
+
+  async createPlayerStateFromConfig(user: User, gameId: string, player: 0 | 1, config: any): Promise<PlayerState> {
+    let playerState: PlayerState = await this.createPlayerState(user, gameId);
+
+    playerState.playername = config.opponent == 'bot' ? 'Bot' : config.gameConfig?.players?.[player]?.name || `Player ${player + 1}`;
+    
+    (playerState as DefaultPlayerState).setInitialScore(config.gameConfig?.players?.[player]?.startingScore || 501);
+    (playerState as DefaultPlayerState).checkoutMode = config.gameConfig?.players?.[player]?.checkoutMode || 'double-out';
+
+    return playerState;
+  }
 }

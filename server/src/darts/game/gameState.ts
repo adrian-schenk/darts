@@ -225,6 +225,13 @@ export class GameState extends JsonSerializable {
     }
   }
 
+  setRandomTurn() {
+    const playerUuids = Array.from(this.playerStates.keys());
+    const randomUuid =
+      playerUuids[Math.floor(Math.random() * playerUuids.length)];
+    this.setTurn(randomUuid);
+  }
+
   setState(state: GameStateType) {
     this.state = state;
   }
@@ -236,7 +243,7 @@ export class GameState extends JsonSerializable {
   addPlayer(user: User, ps: PlayerState, controller: PlayerController): string {
     let playerUuid = '';
 
-    if (!this.users.has(user.uuid)) {
+    if (!this.playerStates.has(ps.uuid)) {
       let playerState = this.playerStates.get(user.uuid);
       if (!playerState) {
         playerState = ps;

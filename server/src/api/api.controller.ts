@@ -28,6 +28,8 @@ import { GameState } from 'src/darts/game/gameState';
 import GameStateFactory from 'src/darts/game/gameFactory';
 import PlayerStateFactory from 'src/darts/game/stateFactory';
 import { HumanPlayerController } from 'src/darts/game/controllers/humanPlayer.controller';
+import { BotPlayerController } from 'src/darts/game/controllers/botPlayer.controller';
+import { BotUser } from 'src/darts/game/controllers/playerController.interface';
 
 @UseGuards(JwtAuthGuard)
 @Controller('api')
@@ -106,8 +108,8 @@ export class ApiController {
 
   @Post('/create-local')
   @UsePipes(new ZodValidationPipe(createLocalGameSchema))
-  async createLocal(@Req() req, @Headers() headers: any, @Body() body: CreateLocalGameDTO) {
-
+  async createLocal(@Req() req, @Headers() headers: any, @Body() body: any) {
+    
     if (this.connectionsService.getClientById(headers['x-socket-id']) == null || this.connectionsService.getClientById(headers['x-socket-id'])?.data.userId != req.user.id) {
       throw new HttpException('Unauthorized: Socket ID is missing or does not match the authenticated user', HttpStatus.BAD_REQUEST);
     }
@@ -124,8 +126,14 @@ export class ApiController {
         await this.gameStateFactory.createGameStateFromMode('', game.gameId);
       gameState.joinable = false;
 
-      gameState.addPlayer(req.user.id, await this.playerStateFactory.createPlayerState(req.user, gameState.gameId), new HumanPlayerController());
-      gameState.addPlayer(req.user.id, await this.playerStateFactory.createPlayerState(req.user, gameState.gameId), new HumanPlayerController());
+      let player1Controller = new HumanPlayerController();
+      let player2Controller = body.settings.opponent.type === 'bot' ? new BotPlayerController() : new HumanPlayerController();
+
+      let player2User = body.settings.opponent.type === 'bot' ? BotUser : req.user;
+
+      gameState.addPlayer(req.user.id, await this.playerStateFactory.createPlayerStateFromConfig(req.user, game.gameId, 0, body.settings), player1Controller);
+      gameState.addPlayer(player2User.id, await this.playerStateFactory.createPlayerStateFromConfig(player2User, game.gameId, 1, body.settings), player2Controller);
+      gameState.setRandomTurn();
 
       await this.dartsGameService.setGameState(game.gameId, gameState);
     }

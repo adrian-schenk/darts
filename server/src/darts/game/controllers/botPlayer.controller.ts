@@ -159,7 +159,7 @@ export class BotPlayerController implements PlayerController {
         await new Promise((resolve) => {
           setTimeout(() => {
             const throwInfo = getRandomSegmentThrow();
-
+            
             _gameState.trigger('dart_hit', BotUser, {
               type: 'dart_hit',
               throw: {

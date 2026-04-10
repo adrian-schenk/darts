@@ -1,4 +1,4 @@
-import { ConsoleLogger, Injectable } from '@nestjs/common';
+import { ConsoleLogger, forwardRef, Inject, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import ConnectionsService from 'src/ws/connections.service';
@@ -37,14 +37,14 @@ export default class DartsGameService {
     @InjectModel(GameEntity.name) private gameModel: Model<GameEntity>,
     @InjectRedis() private readonly redis: Redis,
     private playerStateFactory: PlayerStateFactory,
-    private gameStateFactory: GameStateFactory,
+    @Inject(forwardRef(() => GameStateFactory)) private gameStateFactory: GameStateFactory,
     private userService: UsersService,
   ) { }
 
   async setGameState(gameId: string, state: GameState) {
     this.gameStates.set(gameId, state);
     if (!state) return;
-    await this.redis.set(`gameState:${gameId}`, state.toRealJSON());
+    await this.redis.set(`gameState:${gameId}`, state.toRealJSON(), 'EX', 600);
   }
 
   async getGameState(gameId: string): Promise<GameState | null> {
@@ -96,7 +96,7 @@ export default class DartsGameService {
 
     const createdGame = new this.gameModel();
     let res = await createdGame.save();
-;
+
     return res;
 
     const playerIds = Array.isArray(players)
@@ -147,17 +147,8 @@ export default class DartsGameService {
       }
 
       this.joinedClients.get(gameId)?.push(socket);
-      const ps = await this.playerStateFactory.createPlayerState(
-        socket.data.user,
-        gameId,
-      );
-      const PlayerUuid = gameState?.addPlayer(socket.data.user, ps, new HumanPlayerController());
-      
-      if (gameState?.currentPlayer == null) {
-        gameState?.setTurn(PlayerUuid ?? '');
-      }
 
-      socket.emit('join-game', { success: true, playerId: PlayerUuid });
+      socket.emit('join-game', { success: true });
     } else {
       // Add to spectating clients
       if (!this.spectatingClients.has(gameId)) {

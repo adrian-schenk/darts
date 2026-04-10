@@ -2,10 +2,16 @@ import { Model } from 'mongoose';
 import { GameEntity } from './entities/game.entity';
 import { GameState } from './gameState';
 import { InjectModel } from '@nestjs/mongoose/dist/common/mongoose.decorators';
+import { DartEventEntity } from '../darts_event/dart_event.entity';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import DartsGameService from './game.service';
 
+@Injectable()
 export default class GameStateFactory {
   constructor(
     @InjectModel(GameEntity.name) private gameModel: Model<GameEntity>,
+    @InjectModel(DartEventEntity.name) private dartEventModel: Model<DartEventEntity>,
+    @Inject(forwardRef(() => DartsGameService)) private dartsGameService: DartsGameService,
   ) {}
 
   async createGameStateFromMode(
@@ -26,6 +32,10 @@ export default class GameStateFactory {
         break;
     }
 
+    gameState.providers = {
+      dartEventModel: this.dartEventModel,
+      gameService: this.dartsGameService
+    }
     return gameState;
   }
 }

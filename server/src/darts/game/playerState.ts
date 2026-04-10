@@ -167,6 +167,9 @@ export class DefaultPlayerState extends PlayerState {
   checkoutCombination: any[] = new Array();
 
   @Exclude()
+  checkoutMode: 'open' | 'double-out' | 'master-out' = 'double-out';
+
+  @Exclude()
   throwsPerTurn = 3;
 
   @Exclude()
