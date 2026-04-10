@@ -40,7 +40,7 @@
       <Dartboard
         :ref="getDartboardRefSetter(playeruuid)"
         class="flex-auto w-full"
-        :click-to-add-marker="localPlayer == playeruuid"
+        :click-to-add-marker="true"
         :player-interface="playerRefs.get(playeruuid)?.PlayerInterface ?? undefined"
       ></Dartboard>
     </div>

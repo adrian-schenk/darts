@@ -164,6 +164,8 @@ export class DefaultPlayerState extends PlayerState {
   score: number = 501;
   @Exclude()
   saveScore: number = this.score;
+  @Exclude()
+  initialScore: number = 501;
   checkoutCombination: any[] = new Array();
 
   @Exclude()
@@ -232,7 +234,7 @@ export class DefaultPlayerState extends PlayerState {
   }
 
   public onRoundEnd(game: GameState) {
-    this.setInitialScore(game.config.startingScore || 501);
+    this.setSaveScore(this.initialScore);
   }
 
   public hasRoundEnded(game: GameState): boolean {
@@ -248,10 +250,15 @@ export class DefaultPlayerState extends PlayerState {
     return false;
   }
 
-  public setInitialScore(score: number): void {
+  public setSaveScore(score: number): void {
     this.score = score;
     this.saveScore = score;
     this.recalculateCheckoutCombination();
+  }
+
+  public setInitialScore(score: number): void {
+    this.initialScore = score;
+    this.setSaveScore(score);
   }
 
   public recalculateCheckoutCombination(): void {
@@ -313,7 +320,7 @@ export class CheckoutPlayerState extends DefaultPlayerState {
 
   constructor() {
     super();
-    this.setInitialScore(Number(this.getRandomTarget()));
+    this.setSaveScore(Number(this.getRandomTarget()));
     this.setShowPlayerStat('showName', false);
     this.setShowPlayerStat('showSets', false);
     this.setShowPlayerStat('showLegs', false);
@@ -337,7 +344,7 @@ export class CheckoutPlayerState extends DefaultPlayerState {
   }
 
   public onRoundEnd(game: GameState): void {
-    this.setInitialScore(Number(this.getRandomTarget()));
+    this.setSaveScore(Number(this.getRandomTarget()));
   }
 
   public hasRoundEnded(game: GameState): boolean {

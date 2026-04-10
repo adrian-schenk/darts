@@ -43,7 +43,7 @@ export const regularModes: GameMode[] = [
         label: false,
         presets: [
           { name: 'local', label: 'Local opponent', icon: '👤', description: 'Play against a local opponent' },
-          { name: 'friend', label: 'Friend', icon: '👥', description: 'Play against a friend online' },
+          //{ name: 'friend', label: 'Friend', icon: '👥', description: 'Play against a friend online' },
           { name: 'bot', label: 'Bot', icon: '🤖', description: 'Play against a bot' },
         ],
         classes: {

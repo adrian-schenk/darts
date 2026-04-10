@@ -82,6 +82,8 @@ export default class DartsGameService {
         await this.gameStateFactory.createGameStateFromMode(mode, res.gameId);
       gameState.joinable = false;
 
+      gameState.addPlayer(user, await this.playerStateFactory.createPlayerState(user, res.gameId), new HumanPlayerController());
+
       await this.setGameState(res.gameId, gameState);
     }
 
