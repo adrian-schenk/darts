@@ -12,6 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { User } from 'src/users/user.entity';
 import PlayerStats, { StatType } from './playerStats';
 import { GameState } from './gameState';
+import { number_fields } from './utils';
 
 const checkoutLogic: DartsCheckoutLogicService =
   new DartsCheckoutLogicService();
@@ -45,6 +46,9 @@ export class PlayerState extends JsonSerializable {
 
   @Exclude()
   locked: boolean = false;
+
+  @Exclude()
+  numThrows: number = 0;
 
   state: PlayerActionState;
 
@@ -306,13 +310,49 @@ export class TargetPlayerState extends PlayerState {
   public onDartHit(roundId: string, throwInfo: any): any {
     super.onDartHit(roundId, throwInfo);
 
-    throwInfo.field = throwInfo.field.replace('-inner', '').replace('-outer', '');
-    if (throwInfo.field === this.currentTarget) {
+    let hitField = throwInfo.field.replace('-inner', '').replace('-outer', '');
+    if (hitField === this.currentTarget) {
       this.currentTarget = this.getRandomField();
       this.stats.trackStat('count_hits', StatType.COUNT, 1);
     }
     this.stats.trackStat('count_throws', StatType.COUNT, 1);
   }
+}
+
+export class AroundPlayerState extends TargetPlayerState {
+
+  cur = 0;
+
+  constructor() { 
+    super();
+  }
+
+  static create(user: User, gameId: string): PlayerState {
+    let state = new AroundPlayerState();
+    state.userId = user.id;
+    state.gameId = gameId;
+    state.currentTarget = 'single-' + number_fields[state.cur];
+    return state;
+  }
+
+  public onDartHit(roundId: string, throwInfo: any) {
+    let hitField = throwInfo.field.replace('-inner', '').replace('-outer', '');
+    if (hitField === 'single-' + number_fields[this.cur]) {
+      this.cur++;
+      if (this.cur < number_fields.length) {
+        this.currentTarget = 'single-' + number_fields[this.cur];
+      }
+      this.stats.trackStat('count_hits', StatType.COUNT, 1);
+    }
+    this.stats.trackStat('count_throws', StatType.COUNT, 1);
+
+    this.numThrows++;
+    if (this.numThrows >= 3) {
+      this.numThrows = 0;
+      this.state = PlayerActionState.REMOVE_DARTS;
+    }
+  }
+
 }
 
 export class CheckoutPlayerState extends DefaultPlayerState {
@@ -393,6 +433,7 @@ export const playerStateTypeMap: Record<string, new () => PlayerState> = {
   PlayerState,
   DefaultPlayerState,
   TargetPlayerState,
+  AroundPlayerState,
   CheckoutPlayerState,
 };
 

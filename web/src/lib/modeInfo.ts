@@ -64,49 +64,7 @@ export const regularModes: GameMode[] = [
         showCustomOption: true,
       },
     ]),
-  },
-  {
-    value: 'around-the-clock',
-    label: 'Around The Clock',
-    icon: '🔄',
-    desc: 'Hit all numbers in sequence from 1 to 20.',
-    details: [
-      'Hit each number from 1-20 in order',
-      'Then hit the bullseye to finish',
-      'First player to complete the sequence wins',
-      'Great for targeting practice',
-    ],
-    settingsDefaults: {},
-    settingsSchema: [],
-  },
-  {
-    value: 'bulling',
-    label: 'Bulling',
-    icon: '🎯',
-    desc: 'First to hit the bullseye wins.',
-    details: [
-      'All players aim for the bullseye',
-      'First to hit the bull wins',
-      'Quick and exciting',
-      'Great for warm-ups',
-    ],
-    settingsDefaults: {},
-    settingsSchema: [],
-  },
-  {
-    value: 'max-score',
-    label: 'Max Score',
-    icon: '🏆',
-    desc: 'Highest score in one round wins.',
-    details: [
-      'Throw 3 darts and tally your score',
-      'Highest score wins',
-      'Best out of 3 rounds',
-      'Focus on high-value combinations',
-    ],
-    settingsDefaults: {},
-    settingsSchema: [],
-  },
+  }
 ]
 
 export const trainingModes: GameMode[] = [

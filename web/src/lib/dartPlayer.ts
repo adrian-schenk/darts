@@ -73,9 +73,10 @@ export class DartPlayer {
 
   private readonly handleDartEvent = (msg: any) => {
     if (this.uuid && msg.playerUuid !== this.uuid) return
-
+    
     if (msg.type === 'dart_hit') {
-      const t: Throw = msg.throw
+      const t: Throw = { ...msg.throw }
+
       t.score = this.getFieldScore(t.field)
       t.field = this.getFieldName(t.field)
       this.addThrow(t)

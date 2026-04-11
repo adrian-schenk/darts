@@ -31,6 +31,9 @@ export class GameState extends JsonSerializable {
   joinable: boolean = true;
   gameId: string;
 
+  @Exclude()
+  isMultiplayer: boolean = false;
+
   @Exclude({ toPlainOnly: true })
   @Transform(
     ({ value }) => Object.fromEntries((value as Map<string, string>).entries()),
@@ -170,7 +173,8 @@ export class GameState extends JsonSerializable {
   onDartHit(user: User, throwInfo: any): Boolean {
     if (
       this.currentPlayer &&
-      this.playerStates.get(this.currentPlayer)?.userId === user.id
+      this.playerStates.get(this.currentPlayer)?.userId === user.id &&
+      this.playerStates.get(this.currentPlayer)?.state === PlayerActionState.THROW_DARTS
     ) {
       this.playerStates
         .get(this.currentPlayer)
