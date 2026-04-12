@@ -133,11 +133,11 @@ const startGame = async () => {
 
     if (category === 'local') {
       // For local games, use the local game endpoint
-      url = import.meta.env.VITE_API_BASE_URL + '/create-local/'
+      url = '/api/create-local/'
       body = { mode: value, settings: selectedModeSettings.value }
     } else {
       // For training, use the training endpoint
-      url = import.meta.env.VITE_API_BASE_URL + '/create-training/' + value
+      url = '/api/create-training/' + value
       body = { settings: selectedModeSettings.value }
     }
     
