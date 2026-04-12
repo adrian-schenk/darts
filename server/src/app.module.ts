@@ -24,15 +24,15 @@ dotenv.config({ path: join(__dirname, '..', '.env') });
       type: 'postgres',
       host: process.env.POSTGRES_HOST || 'localhost',
       port: parseInt(process.env.POSTGRES_PORT || '5432'),
-      username: process.env.POSTGRES_USER || 'postgres',
-      password: process.env.POSTGRES_PASSWORD || 'postgres',
+      username: process.env.POSTGRES_USER || 'darts',
+      password: process.env.POSTGRES_PASSWORD || 'darts',
       database: process.env.POSTGRES_DB || 'darts',
       autoLoadEntities: true,
       synchronize: true,
     }),
     MongooseModule.forRoot(
       process.env.MONGO_URI ||
-        `mongodb://${process.env.MONGO_USERNAME}:${process.env.MONGO_PASSWORD}@localhost:${process.env.MONGO_PORT}/${process.env.MONGO_DATABASE}?authSource=admin`,
+        `mongodb://${process.env.MONGO_USERNAME ?? 'darts'}:${process.env.MONGO_PASSWORD ?? 'darts'}@localhost:${process.env.MONGO_PORT ?? '27017'}/${process.env.MONGO_DATABASE ?? 'darts'}?authSource=admin`,
     ),
     RedisModule.forRoot({
       type: 'single',

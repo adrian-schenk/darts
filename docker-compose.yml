@@ -1,3 +1,4 @@
+# sudo docker compose --env-file .env-dev up -d
 services:
   postgres:
     image: postgres:16-alpine
