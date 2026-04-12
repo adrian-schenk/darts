@@ -14,6 +14,7 @@ import {
   DartEventEntitySchema,
 } from './darts_event/dart_event.entity';
 import { UsersModule } from 'src/users/users.module';
+import { MatchmakingController } from './matchmaking/mm.controller';
 
 @Module({
   imports: [
@@ -42,5 +43,8 @@ import { UsersModule } from 'src/users/users.module';
     PlayerStateFactory,
     GameStateFactory,
   ],
+  controllers: [
+    MatchmakingController
+  ]
 })
 export class DartsModule {}

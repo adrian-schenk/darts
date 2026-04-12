@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { User } from 'src/users/user.entity';
-import { DartSocket } from 'src/ws/ws.gateway';
+import ConnectionsService from 'src/ws/connections.service';
+import DartsGameService from '../game/game.service';
 
 enum MMType {
   RANKED,
@@ -11,10 +12,30 @@ enum MMType {
 
 @Injectable()
 export default class MatchmakingService {
-  queue: Map<string, Array<User>> = new Map();
-  constructor() {}
+  queue: Map<string, Array<{ user: User; socketId: string }>> = new Map();
+  constructor(
+    @Inject(forwardRef(() => ConnectionsService))
+    private readonly connectionsService: ConnectionsService,
+    @Inject(forwardRef(() => DartsGameService))
+    private readonly gameService: DartsGameService,
+  ) {}
 
-  findMatch() {}
+  async findMatch(mode: string, user: User, userSocketId: string) {
+    let possibleOpponents = this.queue.get(mode)?.filter((u) => u.user.id !== user.id) || [];
+    console.log(possibleOpponents)
+    if (possibleOpponents.length > 0) {
+      const opponent = possibleOpponents[Math.floor(Math.random() * possibleOpponents.length)];
+
+      // Remove both players from the queue
+      this.leaveQueue(user);
+      this.leaveQueue(opponent.user);
+
+      let { gameId } = await this.gameService.createMultiPlayerGame([[user, 'human'], [opponent.user, 'human']], { mode });
+
+      this.connectionsService.broadcast([opponent.socketId, userSocketId], 'match_found', { gameId });
+    }
+
+  }
 
   getElo() {}
 
@@ -24,22 +45,39 @@ export default class MatchmakingService {
     return this.queue.get(mode) || [];
   }
 
-  joinQueue(mode: string, user: User) {
+  isUserInQueue(user: User) {
+    for (const users of this.queue.values()) {
+      if (users.some((u) => u.user.id === user.id)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  joinQueue(mode: string, user: User, socketId: string) {
+    if (this.isUserInQueue(user)) {
+      return { res: false, msg: 'User is already in a queue' };
+    }
     if (!this.queue.has(mode)) {
       this.queue.set(mode, []);
     }
     const queue = this.queue.get(mode);
     if (queue) {
-      queue.push(user);
+      queue.push({ user, socketId });
     }
+    
+    this.findMatch(mode, user, socketId);
+
+    return { res: true, msg: 'Joined queue' };
   }
 
-  leaveQueue(mode: string, user: User) {
-    if (this.queue.has(mode)) {
+  leaveQueue(user: User) {
+    for (const [mode, users] of this.queue.entries()) {
       this.queue.set(
         mode,
-        (this.queue.get(mode) || []).filter((u) => u.id !== user.id),
+        users.filter((u) => u.user.id !== user.id),
       );
     }
   }
+  
 }

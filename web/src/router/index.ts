@@ -27,7 +27,7 @@ const router = createRouter({
           component: () => import('../views/PrivateGame.vue'),
           props: true,
         },
-        { path: 'online-game', component: () => import('../views/Dashboard.vue') },
+        { path: 'online-game', component: () => import('../views/OnlineGame.vue') },
         { path: 'local-tournament', component: () => import('../views/Dashboard.vue') },
         { path: 'online-tournament', component: () => import('../views/Dashboard.vue') },
         { path: 'training', component: () => import('../views/Training.vue') },
