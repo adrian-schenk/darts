@@ -152,17 +152,4 @@ export class ApiController {
     const { teamPlayers, mode, status, createdAt, updatedAt } = game;
     return { gameId, teamPlayers, mode, status, createdAt, updatedAt };
   }
-
-  @Post('/join-queue/:mode')
-  async joinQueue(@Param('mode') mode: string, @Req() req) {
-    const user = req.user;
-    this.matchmakingService.joinQueue(mode, req.user);
-    return { message: `User ${user.username} joined ${mode} queue` };
-  }
-
-  @Get('/queue/:mode')
-  async getQueue(@Param('mode') mode: string) {
-    const queue = await this.matchmakingService.getQueue(mode);
-    return { mode, queue };
-  }
 }
