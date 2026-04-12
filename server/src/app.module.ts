@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { AppController } from './app.controller';
@@ -7,6 +9,7 @@ import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { ApiModule } from './api/api.module';
 import { AuthModule } from './auth/auth.module';
+import Throttler from './throttler/Throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MongooseModule } from '@nestjs/mongoose';
 import { WsModule } from './ws/ws.module';
@@ -20,6 +23,14 @@ import { RedisModule } from '@nestjs-modules/ioredis';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: process.env.NODE_ENV === 'production' ? join(__dirname, '../..', '.env') : join(__dirname, '../..', '.env.development'),
+    }),
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          ttl: 5000,
+          limit: 10
+        }
+      ]
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
@@ -65,6 +76,12 @@ import { RedisModule } from '@nestjs-modules/ioredis';
     WsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: Throttler,
+    },
+  ],
 })
 export class AppModule {}
