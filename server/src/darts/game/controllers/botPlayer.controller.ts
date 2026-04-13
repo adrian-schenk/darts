@@ -1,5 +1,6 @@
 import { GameState } from '../gameState';
-import { BotUser, PlayerController } from './playerController.interface';
+import { PlayerController } from './playerController.interface';
+import { BotUser } from 'src/users/users.service';
 
 /*
   Board Top left: -x, -y

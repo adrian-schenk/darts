@@ -29,7 +29,8 @@ import GameStateFactory from 'src/darts/game/gameFactory';
 import PlayerStateFactory from 'src/darts/game/stateFactory';
 import { HumanPlayerController } from 'src/darts/game/controllers/humanPlayer.controller';
 import { BotDifficulty, BotPlayerController } from 'src/darts/game/controllers/botPlayer.controller';
-import { BotUser } from 'src/darts/game/controllers/playerController.interface';
+import { BotUser } from 'src/users/users.service';
+
 
 @UseGuards(JwtAuthGuard)
 @Controller('api')
@@ -131,8 +132,8 @@ export class ApiController {
 
       let player2User = body.settings.opponent.type === 'bot' ? BotUser : req.user;
 
-      gameState.addPlayer(req.user.id, await this.playerStateFactory.createPlayerStateFromConfig(req.user, game.gameId, 0, body.settings), player1Controller);
-      gameState.addPlayer(player2User.id, await this.playerStateFactory.createPlayerStateFromConfig(player2User, game.gameId, 1, body.settings), player2Controller);
+      gameState.addPlayer(req.user.id, await this.playerStateFactory.createPlayerStateFromConfig(req.user, game.gameId, body.settings, 0), player1Controller);
+      gameState.addPlayer(player2User.id, await this.playerStateFactory.createPlayerStateFromConfig(player2User, game.gameId, body.settings, 1), player2Controller);
       gameState.setRandomTurn();
 
       await this.dartsGameService.setGameState(game.gameId, gameState);

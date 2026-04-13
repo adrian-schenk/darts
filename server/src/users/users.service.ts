@@ -3,12 +3,28 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
 
+export let BotUser: User;
+
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-  ) {}
+  ) {
+    this.userRepository.findOneBy({ uuid: 'bot' }).then((bot) => {
+      if (!bot) {
+        bot = this.userRepository.create({
+          username: 'Bot',
+          email: '',
+          password: '',
+          uuid: 'bot',
+        });
+        this.userRepository.save(bot);
+      }
+
+      BotUser = bot;
+    });
+  }
 
   async create(
     username: string,

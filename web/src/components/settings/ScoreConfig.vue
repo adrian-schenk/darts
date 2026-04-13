@@ -5,6 +5,7 @@ import { computed, ref, watch } from 'vue'
 const props = defineProps(['context'])
 
 const showCustomOption = computed(() => props.context?.node?.props?.showCustomOption ?? true)
+const customizableSets = computed(() => props.context?.node?.props?.customizableSets ?? false)
 
 const presetValues = computed<number[]>(() => {
   return (props.context?.node?.props?.presets as number[] | undefined) ?? [501, 301]
@@ -150,7 +151,7 @@ watch(legs, (val) => patchNodeValue({ legs: val }))
       </div>
     </div>
 
-    <div>
+    <div v-if="customizableSets">
       <div class="text-sm font-semibold text-gray-300 my-2">Sets / Legs</div>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 w-full">
         <label for="sets" class="block text-xs text-gray-400 mb-1">Number of Sets</label>

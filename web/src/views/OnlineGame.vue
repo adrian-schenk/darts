@@ -1,26 +1,49 @@
 <template>
-  <!-- Menu is active - show fullscreen menu -->
-  <div class="min-h-screen w-full bg-gradient-to-br from-slate-900 to-slate-950">
-    <button @click="joinQueue()"
-      class="mt-20 mx-auto block bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold py-3 px-6 rounded-lg transition-all">
-      Join Online Queue
-    </button>
-    <button @click="leaveQueue()"
-      class="mt-4 mx-auto block bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-500 hover:to-pink-500 text-white font-bold py-3 px-6 rounded-lg transition-all">
-      Leave Online Queue
-    </button>
-    <RouterView />
-  </div>
+    <BackgroundCentered>
+        <div class="text-2xl font-bold mb-2">Online Matchmaking</div>
+
+        <FormKit type="form" v-model="settings" :actions="false">
+            <FormKitSchema :schema="settingsSchema" />
+        </FormKit>
+
+        <button @click="joinQueue()"
+        class="mt-20 mx-auto block bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold py-3 px-6 rounded-lg transition-all">
+        Join Online Queue
+        </button>
+        <button @click="leaveQueue()"
+        class="mt-4 mx-auto block bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-500 hover:to-pink-500 text-white font-bold py-3 px-6 rounded-lg transition-all">
+        Leave Online Queue
+        </button>
+        <RouterView />
+    </BackgroundCentered>    
 </template>
 
 <script setup lang="ts">
-import Player from '@/components/Player.vue'
+import BackgroundCentered from '@/components/ui/BackgroundCentered.vue'
 import getBearer from '@/lib/auth'
 import useSocket from '@/lib/socket'
 import router from '@/router'
 import { ref } from 'vue'
 
 let { socketId, socket, status, data, send, close } = useSocket()
+
+let settings = ref({});
+let settingsSchema = [
+    {
+    $formkit: 'scoreConfig',
+    id: 'gameConfig',
+    name: 'gameConfig',
+    label: false,
+    classes: {
+        'wrapper': 'max-w-[unset]!',
+    },
+    presets: [
+        501, 301
+    ],
+    customizableSets: false,
+    showCustomOption: false,
+    },
+];
 
 socket.on('match_found', (matchData: any) => {
   if (matchData.gameId) {
@@ -33,7 +56,7 @@ const joinQueue = async () => {
 
   try {
 
-    let body = {}
+    let body = settings.value;
 
     let url = '/api/join-queue';
     

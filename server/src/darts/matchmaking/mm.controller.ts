@@ -10,7 +10,7 @@ export class MatchmakingController {
   constructor(private readonly matchmakingService: MatchmakingService, private readonly connectionsService: ConnectionsService) {}
 
   @Post('join-queue')
-  joinQueue(@Body() body: { mode: string }, @Req() req, @Headers() headers) {
+  joinQueue(@Body() body: { gameConfig: { startingScore: 501 | 301, checkoutMode: 'open' | 'double-out' | 'master-out' }, ranked?: 'unranked' | 'ranked' }, @Req() req, @Headers() headers) {
 
     if (this.connectionsService.getClientById(headers['x-socket-id']) == null || this.connectionsService.getClientById(headers['x-socket-id'])?.data.userId != req.user.id) {
       throw new HttpException('Unauthorized: Socket ID is missing or does not match the authenticated user', HttpStatus.BAD_REQUEST);
@@ -18,7 +18,7 @@ export class MatchmakingController {
 
     const user = req.user
     
-    let { res, msg } = this.matchmakingService.joinQueue(body.mode ?? 'standard', user, headers['x-socket-id'])
+    let { res, msg } = this.matchmakingService.joinQueue(this.matchmakingService.getQueueNameFromConfig(body), user, headers['x-socket-id'])
     return { success: res, message: msg }
   }
 
@@ -31,6 +31,6 @@ export class MatchmakingController {
 
   @Get('queue')
   getQueue(@Query('mode') mode: string) {
-    return this.matchmakingService.getQueue(mode ?? 'standard')
+    return this.matchmakingService.getQueue(mode)
   }
 }

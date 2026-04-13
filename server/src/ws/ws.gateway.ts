@@ -44,7 +44,7 @@ export class DartSocket implements OnGatewayConnection, OnGatewayDisconnect {
     client.onAny((event, ...args) => {
       const payload = args.length > 1 ? args : args[0];
       this.dartSocketService.handleMessage(client, event, payload);
-      console.log(`Received event: ${event} with args:`, payload);
+      //console.log(`Received event: ${event} with args:`, payload);
     });
   }
 
