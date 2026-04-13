@@ -5,22 +5,22 @@
     class="text-sm text-gray-400 hover:text-gray-300 mb-4 inline-block"
     >← Back</RouterLink
   >
-  <div v-if="!mode" class="p-6 max-w-4xl mx-auto">
+  <BackgroundCentered v-if="!mode">
     <h2 class="text-2xl font-bold mb-2">Choose Training Mode</h2>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <button
-          v-for="mode in trainingModes"
-          :key="mode.value"
-          @click="startSession(mode.value)"
-          :class="['group relative bg-gradient-to-br from-slate-800 to-slate-900 border-2 rounded-lg p-6 hover:shadow-lg transition-all duration-300 text-left', getTrainingModeClass(mode.value)]"
-        >
-          <div :class="['absolute inset-0 rounded-lg transition-colors', getTrainingModeBgClass(mode.value)]"></div>
-          <h3 class="text-xl font-bold text-white mb-2 relative">{{ mode.icon }} {{ mode.label }}</h3>
-          <p class="text-gray-400 relative text-sm mb-4 min-h-10">{{ mode.desc }}</p>
-          <div :class="['text-xs font-semibold relative', getTrainingModeTextClass(mode.value)]">Practice →</div>
-        </button>
-      </div>
-  </div>
+      <button
+        v-for="mode in trainingModes"
+        :key="mode.value"
+        @click="startSession(mode.value)"
+        :class="['group relative bg-gradient-to-br from-slate-800 to-slate-900 border-2 rounded-lg p-6 hover:shadow-lg transition-all duration-300 text-left', getTrainingModeClass(mode.value)]"
+      >
+        <div :class="['absolute inset-0 rounded-lg transition-colors', getTrainingModeBgClass(mode.value)]"></div>
+        <h3 class="text-xl font-bold text-white mb-2 relative">{{ mode.icon }} {{ mode.label }}</h3>
+        <p class="text-gray-400 relative text-sm mb-4 min-h-10">{{ mode.desc }}</p>
+        <div :class="['text-xs font-semibold relative', getTrainingModeTextClass(mode.value)]">Practice →</div>
+      </button>
+    </div>
+  </BackgroundCentered>
   <div v-if="mode" class="w-full mx-auto">
     <div
       v-for="[playeruuid, player] of players"
@@ -52,13 +52,14 @@
 <script setup lang="ts">
 import Dartboard from '@/components/Dartboard.vue'
 import Player from '@/components/Player.vue'
+import BackgroundCentered from '@/components/ui/BackgroundCentered.vue'
 import getBearer from '@/lib/auth'
+import { getTrainingModeBgClass, getTrainingModeClass, getTrainingModeTextClass, trainingModes } from '@/lib/modeInfo'
 import useSocket from '@/lib/socket'
 import router from '@/router'
 import { useTrainingStore } from '@/stores/training/TrainingStore'
 import { onMounted, ref } from 'vue'
-import { RouterView, routerViewLocationKey } from 'vue-router'
-import { getTrainingModeClass, getTrainingModeBgClass, getTrainingModeTextClass,regularModes, trainingModes } from '@/lib/modeInfo'
+import { RouterView } from 'vue-router'
 
 const trainingStore = useTrainingStore()
 
@@ -106,7 +107,7 @@ const getDartboardRefSetter = (playerUuid: string) => {
 
 onMounted(() => {
   if (props.gameId) {
-    fetch(import.meta.env.VITE_API_BASE_URL + '/game/' + props.gameId, {
+    fetch('/api/game/' + props.gameId, {
       method: 'GET',
       headers: { Authorization: getBearer(), 'Content-Type': 'application/json' },
     })
@@ -147,7 +148,7 @@ onMounted(() => {
 })
 
 const startSession = (mode: string) => {
-  fetch(import.meta.env.VITE_API_BASE_URL + '/create-training/' + mode, {
+  fetch('api/create-training/' + mode, {
     method: 'POST',
     headers: { Authorization: getBearer(), 'Content-Type': 'application/json', 'x-socket-id': socket.id },
     body: JSON.stringify({ mode }),

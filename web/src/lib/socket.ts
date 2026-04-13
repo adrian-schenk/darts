@@ -24,9 +24,7 @@ export default function useSocket() {
   }
 
   if (!socket) {
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'localhost'
-    const backendPort = import.meta.env.VITE_BACKEND_PORT || '3000'
-    socket = io(`http://${backendUrl}:${backendPort}`, {
+    socket = io(`/`, {
       auth: { token },
       transports: ['websocket'],
     })

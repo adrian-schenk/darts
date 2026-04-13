@@ -1,20 +1,54 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { User } from 'src/users/user.entity';
-import { DartSocket } from 'src/ws/ws.gateway';
+import ConnectionsService from 'src/ws/connections.service';
+import DartsGameService from '../game/game.service';
+import { BotUser } from 'src/users/users.service';
 
 enum MMType {
   RANKED,
   UNRANKED,
-  SOLO,
-  TEAM,
+}
+
+const QueueModeConfigs = {
+  
 }
 
 @Injectable()
 export default class MatchmakingService {
-  queue: Map<string, Array<User>> = new Map();
-  constructor() {}
+  queue: Map<string, Array<{ user: User; socketId: string, timestamp: number }>> = new Map();
+  constructor(
+    @Inject(forwardRef(() => ConnectionsService))
+    private readonly connectionsService: ConnectionsService,
+    @Inject(forwardRef(() => DartsGameService))
+    private readonly gameService: DartsGameService,
+  ) {
+    setInterval(() => this.doMatchMaking(), 2500);
+  }
 
-  findMatch() {}
+  async doMatchMaking() {
+    for (const [mode, users] of this.queue.entries()) {
+      for (const user of users) {
+        if (Date.now() - user.timestamp > 30000) {
+          this.leaveQueue(user.user);
+          let { gameId } = await this.gameService.createMultiPlayerGame([[user.user, 'human'], [BotUser, 'bot']], { mode });
+
+          this.connectionsService.broadcast([user.socketId], 'match_found', { gameId });
+        }
+      }
+      if (users.length >= 2) {
+        const user1 = users[0];
+        const user2 = users[1];
+
+        // Remove both players from the queue
+        this.leaveQueue(user1.user);
+        this.leaveQueue(user2.user);
+
+        let { gameId } = await this.gameService.createMultiPlayerGame([[user1.user, 'human'], [user2.user, 'human']], { mode });
+
+        this.connectionsService.broadcast([user1.socketId, user2.socketId], 'match_found', { gameId });
+      }
+    }
+  }
 
   getElo() {}
 
@@ -24,22 +58,47 @@ export default class MatchmakingService {
     return this.queue.get(mode) || [];
   }
 
-  joinQueue(mode: string, user: User) {
+  isUserInQueue(user: User) {
+    for (const users of this.queue.values()) {
+      if (users.some((u) => u.user.id === user.id)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  joinQueue(mode: string, user: User, socketId: string) {
+    if (this.isUserInQueue(user)) {
+      return { res: false, msg: 'User is already in a queue' };
+    }
     if (!this.queue.has(mode)) {
       this.queue.set(mode, []);
     }
     const queue = this.queue.get(mode);
     if (queue) {
-      queue.push(user);
+      queue.push({ user, socketId, timestamp: Date.now() });
     }
+    console.log(`User ${user.username} joined queue for mode ${mode}`);
+    return { res: true, msg: 'Joined queue' };
   }
 
-  leaveQueue(mode: string, user: User) {
-    if (this.queue.has(mode)) {
+  leaveQueue(user: User) {
+    for (const [mode, users] of this.queue.entries()) {
       this.queue.set(
         mode,
-        (this.queue.get(mode) || []).filter((u) => u.id !== user.id),
+        users.filter((u) => u.user.id !== user.id),
       );
     }
+  }
+  
+  getQueueNameFromConfig(config: any) {
+
+    let key = '' + config.gameConfig.startingScore + '/' + config.gameConfig.checkoutMode + '/' + (config.ranked ?? 'unranked');
+
+    if (!QueueModeConfigs[key]) {
+      QueueModeConfigs[key] = key;
+    }
+
+    return key;
   }
 }

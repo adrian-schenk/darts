@@ -1,42 +1,74 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { DartSocket } from './ws/ws.gateway';
 import { UsersModule } from './users/users.module';
 import { ApiModule } from './api/api.module';
-import DartSocketService from './ws/ws.service';
 import { AuthModule } from './auth/auth.module';
+import Throttler from './throttler/Throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MongooseModule } from '@nestjs/mongoose';
-import * as dotenv from 'dotenv';
 import { WsModule } from './ws/ws.module';
 import { RedisModule } from '@nestjs-modules/ioredis';
-dotenv.config({ path: join(__dirname, '..', '.env') });
 
 @Module({
   imports: [
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'public'),
     }),
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.POSTGRES_HOST || 'localhost',
-      port: parseInt(process.env.POSTGRES_PORT || '5432'),
-      username: process.env.POSTGRES_USER || 'postgres',
-      password: process.env.POSTGRES_PASSWORD || 'postgres',
-      database: process.env.POSTGRES_DB || 'darts',
-      autoLoadEntities: true,
-      synchronize: true,
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: process.env.NODE_ENV === 'production' ? join(__dirname, '../..', '.env') : join(__dirname, '../..', '.env.development'),
     }),
-    MongooseModule.forRoot(
-      process.env.MONGO_URI ||
-        `mongodb://${process.env.MONGO_USERNAME}:${process.env.MONGO_PASSWORD}@localhost:${process.env.MONGO_PORT}/${process.env.MONGO_DATABASE}?authSource=admin`,
-    ),
-    RedisModule.forRoot({
-      type: 'single',
-      url: 'redis://localhost:6379',
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          ttl: 5000,
+          limit: 10
+        }
+      ]
+    }),
+    TypeOrmModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        type: 'postgres',
+        host: config.get<string>('POSTGRES_HOST'),
+        port: Number(config.get<string>('POSTGRES_PORT')),
+        username: config.get<string>('POSTGRES_USER'),
+        password: String(config.get<string>('POSTGRES_PASSWORD')),
+        database: config.get<string>('POSTGRES_DB'),
+        autoLoadEntities: true,
+        synchronize: true,
+      }),
+    }),
+    MongooseModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        const mongoUri = config.get<string>('MONGO_URI');
+        if (mongoUri) {
+          return { uri: mongoUri };
+        }
+
+        const username = config.get<string>('MONGO_INITDB_ROOT_USERNAME');
+        const password = config.get<string>('MONGO_INITDB_ROOT_PASSWORD');
+        const port = config.get<string>('MONGO_PORT');
+        const database = config.get<string>('MONGO_INITDB_DATABASE');
+
+        return {
+          uri: `mongodb://${username}:${password}@localhost:${port}/${database}?authSource=admin`,
+        };
+      },
+    }),
+    RedisModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        type: 'single',
+        url: config.get<string>('REDIS_URL', 'redis://localhost:6379'),
+      }),
     }),
     UsersModule,
     ApiModule,
@@ -44,6 +76,12 @@ dotenv.config({ path: join(__dirname, '..', '.env') });
     WsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: Throttler,
+    },
+  ],
 })
 export class AppModule {}

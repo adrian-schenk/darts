@@ -96,7 +96,7 @@ const form = ref({
 
 const handleLogin = () => {
   fetch(
-    `http://${import.meta.env.VITE_BACKEND_URL}:${import.meta.env.VITE_BACKEND_PORT}/auth/login`,
+    `/auth/login`,
     {
       method: 'POST',
       headers: {

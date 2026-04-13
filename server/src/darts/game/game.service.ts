@@ -1,30 +1,19 @@
-import { ConsoleLogger, forwardRef, Inject, Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import ConnectionsService from 'src/ws/connections.service';
-import { GameEntity, GameEntitySchema } from './entities/game.entity';
-import { User } from 'src/users/user.entity';
-import { Socket } from 'socket.io';
-import PlayerState, {
-  CheckoutPlayerState,
-  DefaultPlayerState,
-  PlayerActionState,
-  TargetPlayerState,
-} from './playerState';
 import { InjectRedis } from '@nestjs-modules/ioredis';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { plainToInstance } from 'class-transformer';
 import Redis from 'ioredis/built/Redis';
-import { log } from 'console';
-import { GameState } from './gameState';
-import GameStateFactory from './gameFactory';
-import PlayerStateFactory from './stateFactory';
-import { plainToClassFromExist, plainToInstance } from 'class-transformer';
+import { Model } from 'mongoose';
+import { Socket } from 'socket.io';
+import { User } from 'src/users/user.entity';
 import { UsersService } from 'src/users/users.service';
+import ConnectionsService from 'src/ws/connections.service';
 import { HumanPlayerController } from './controllers/humanPlayer.controller';
-import {
-  BotPlayerController,
-  BotProfile,
-} from './controllers/botPlayer.controller';
-import { BotUser } from './controllers/playerController.interface';
+import { GameEntity } from './entities/game.entity';
+import GameStateFactory from './gameFactory';
+import { GameState } from './gameState';
+import PlayerStateFactory from './stateFactory';
+import { BotPlayerController } from './controllers/botPlayer.controller';
 
 @Injectable()
 export default class DartsGameService {
@@ -90,6 +79,31 @@ export default class DartsGameService {
     let res = await createdGame.save();
 
     return res;
+  }
+
+  async createMultiPlayerGame(
+    users: [User, string][],
+    config: any
+  ) {
+    const createdGame = new this.gameModel({
+      playerIds: users.map((u) => u[0].id),
+      mode: config.mode,
+      status: 'open',
+    });
+    let res = await createdGame.save();
+
+    let gameState: GameState =
+      await this.gameStateFactory.createGameStateFromMode(config.mode, res.gameId);
+
+    for (const [user, controllerType] of users) {
+      gameState.addPlayer(user, await this.playerStateFactory.createPlayerState(user, res.gameId), controllerType != 'bot' ? new HumanPlayerController() : new BotPlayerController());
+    }
+
+    gameState.setRandomTurn();
+
+    await this.setGameState(res.gameId, gameState);
+
+    return { success: true, gameId: res.gameId };
   }
 
   async getDartGame(gameId: string): Promise<GameEntity | null> {

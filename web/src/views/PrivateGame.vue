@@ -1,7 +1,6 @@
 <template>
   <!-- Menu is active - show fullscreen menu -->
-  <div class="min-h-screen w-full bg-gradient-to-br from-slate-900 to-slate-950">
-    <div class="p-6 max-w-4xl mx-auto">
+  <BackgroundCentered>
       <!-- Local Games Mode Selection -->
       <template v-if="!selectedMode">
 
@@ -55,20 +54,17 @@
           </div>
         </div>
       </div>
-    </div>
-    <RouterView />
-  </div>
+  </BackgroundCentered>
 </template>
 
 <script setup lang="ts">
 import Dartboard from '@/components/Dartboard.vue'
 import Player from '@/components/Player.vue'
-import ScoreConfig from '@/components/settings/ScoreConfig.vue'
+import BackgroundCentered from '@/components/ui/BackgroundCentered.vue'
 import getBearer from '@/lib/auth'
-import { PlayerActionState } from '@/lib/dartPlayer'
 import {
-  getTrainingModeClass,
   getTrainingModeBgClass,
+  getTrainingModeClass,
   getTrainingModeTextClass,
   regularModes,
   trainingModes,
@@ -78,7 +74,7 @@ import {
 import useSocket from '@/lib/socket'
 import router from '@/router'
 import { FormKit, FormKitSchema } from '@formkit/vue'
-import { onMounted, ref, watch } from 'vue'
+import { ref } from 'vue'
 
 let { socketId, socket, status, data, send, close } = useSocket()
 
@@ -133,11 +129,11 @@ const startGame = async () => {
 
     if (category === 'local') {
       // For local games, use the local game endpoint
-      url = import.meta.env.VITE_API_BASE_URL + '/create-local/'
+      url = '/api/create-local/'
       body = { mode: value, settings: selectedModeSettings.value }
     } else {
       // For training, use the training endpoint
-      url = import.meta.env.VITE_API_BASE_URL + '/create-training/' + value
+      url = '/api/create-training/' + value
       body = { settings: selectedModeSettings.value }
     }
     

@@ -11,6 +11,7 @@ export default class ConnectionsService {
 
   constructor(
     private jwtStrategy: JwtStrategy,
+    @Inject(forwardRef(() => MatchmakingService))
     private readonly matchmakingService: MatchmakingService,
     @Inject(forwardRef(() => DartsGameService))
     private readonly gameService: DartsGameService,
@@ -71,5 +72,14 @@ export default class ConnectionsService {
       throw new Error('User not found for socket');
     }
     return client.data.user;
+  }
+
+  broadcast(socketIds: string[], event: string, data: any) {
+    for (const socketId of socketIds) {
+      const client = this.getClientById(socketId);
+      if (client) {
+        client.emit(event, data);
+      }
+    }
   }
 }

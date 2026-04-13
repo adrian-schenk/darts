@@ -51,7 +51,7 @@ const getPlayerRefSetter = (playerUuid: string) => {
 
 onMounted(() => {
   if (props.gameId) {
-    fetch(import.meta.env.VITE_API_BASE_URL + '/game/' + props.gameId, {
+    fetch('/api/game/' + props.gameId, {
       method: 'GET',
       headers: { Authorization: getBearer(), 'Content-Type': 'application/json' },
     })
