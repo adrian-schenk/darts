@@ -115,23 +115,18 @@ export class ApiController {
       gameState.joinable = false;
 
       let player1Controller = new HumanPlayerController();
-      let player2Controller = body.settings?.opponent?.type === 'bot' ? new BotPlayerController(body.settings?.opponent?.difficulty ?? BotDifficulty.auto) : new HumanPlayerController();
-
-      let player2User = body.settings?.opponent?.type === 'bot' ? BotUser : req.user;
 
       gameState.addPlayer(req.user.id, await this.playerStateFactory.createPlayerState(req.user, game.gameId), player1Controller);
-      gameState.addPlayer(player2User.id, await this.playerStateFactory.createPlayerState(player2User, game.gameId), player2Controller);
-      gameState.setRandomTurn();
 
       await this.dartsGameService.setGameState(game.gameId, gameState);
     }
-
+    
     return { gameId: game.gameId };
   }
 
-  @Post('/create-local')
+  @Post('/create-local/')
   @UsePipes(new ZodValidationPipe(createLocalGameSchema))
-  async createLocal(@Req() req, @Headers() headers: any, @Body() body: any) {
+  async createLocal(@Req() req, @Headers() headers: any, @Body() body: any, mode?: string) {
     
     if (this.connectionsService.getClientById(headers['x-socket-id']) == null || this.connectionsService.getClientById(headers['x-socket-id'])?.data.userId != req.user.id) {
       throw new HttpException('Unauthorized: Socket ID is missing or does not match the authenticated user', HttpStatus.BAD_REQUEST);
@@ -139,7 +134,7 @@ export class ApiController {
 
     const game: GameEntity = await this.dartsGameService.createDartGame(
       req.user,
-      'local-game',
+      mode ?? 'local-game',
     );
 
     await game.set('owner', req.user.id).save();
