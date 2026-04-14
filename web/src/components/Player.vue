@@ -15,7 +15,7 @@
       <div class="h-8 border-l border-gray-600 mx-4"></div>
       <div class="m-4">{{ PlayerInterface.getPlayerStat('legs') }} legs</div>
     </div>
-    <div :class="['text-8xl text-white my-4 font-bold', PlayerInterface.currentTargetHit.value ? 'text-green-500!' : '']">{{ PlayerInterface.score.value ? PlayerInterface.score : PlayerInterface.getCurrentTarget() }}</div>
+    <div :class="['text-8xl text-white my-4 font-bold', PlayerInterface.currentTargetHit.value ? 'text-green-500!' : '']">{{ PlayerInterface.score.value != null ? PlayerInterface.score : PlayerInterface.getCurrentTarget() }}</div>
     <div class="flex justify-center items-center gap-2 mt-4 text-gray-400">
       <div
         v-if="!PlayerInterface.currentTarget.value"

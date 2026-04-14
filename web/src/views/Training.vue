@@ -150,7 +150,7 @@ onMounted(() => {
 const startSession = (mode: string) => {
   fetch('api/create-training/' + mode, {
     method: 'POST',
-    headers: { Authorization: getBearer(), 'Content-Type': 'application/json' },
+    headers: { Authorization: getBearer(), 'Content-Type': 'application/json', 'x-socket-id': socket.id },
     body: JSON.stringify({ mode }),
   })
     .then((res) => res.json())

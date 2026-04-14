@@ -90,7 +90,7 @@ export class ApiController {
   }
 
   @Post('/create-training/:mode')
-  async createTraining(@Param('mode') mode: string, @Req() req) {
+  async createTraining(@Param('mode') mode: string, @Req() req, @Body() body: any, @Headers() headers: any) {
     const validModes = ['target', 'around', 'checkouts', 'max'];
     if (!validModes.includes(mode)) {
       throw new HttpException(
@@ -99,17 +99,35 @@ export class ApiController {
       );
     }
 
+    if (this.connectionsService.getClientById(headers['x-socket-id']) == null || this.connectionsService.getClientById(headers['x-socket-id'])?.data.userId != req.user.id) {
+      throw new HttpException('Unauthorized: Socket ID is missing or does not match the authenticated user', HttpStatus.BAD_REQUEST);
+    }
+
     const game: GameEntity = await this.dartsGameService.createTraining(
       req.user,
       mode,
     );
 
-    return { gameId: game.gameId, mode };
+    await game.set('owner', req.user.id).save();
+
+    if (!(await this.dartsGameService.getGameState(game.gameId))) {
+      let gameState: GameState =
+        await this.gameStateFactory.createGameStateFromMode(mode, game.gameId);
+      gameState.joinable = false;
+
+      let player1Controller = new HumanPlayerController();
+
+      gameState.addPlayer(req.user.id, await this.playerStateFactory.createPlayerState(req.user, game.gameId), player1Controller);
+
+      await this.dartsGameService.setGameState(game.gameId, gameState);
+    }
+    
+    return { gameId: game.gameId };
   }
 
-  @Post('/create-local')
+  @Post('/create-local/')
   @UsePipes(new ZodValidationPipe(createLocalGameSchema))
-  async createLocal(@Req() req, @Headers() headers: any, @Body() body: any) {
+  async createLocal(@Req() req, @Headers() headers: any, @Body() body: any, mode?: string) {
     
     if (this.connectionsService.getClientById(headers['x-socket-id']) == null || this.connectionsService.getClientById(headers['x-socket-id'])?.data.userId != req.user.id) {
       throw new HttpException('Unauthorized: Socket ID is missing or does not match the authenticated user', HttpStatus.BAD_REQUEST);

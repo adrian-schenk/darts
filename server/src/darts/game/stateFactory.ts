@@ -4,6 +4,7 @@ import { Model } from 'mongoose';
 import { User } from 'src/users/user.entity';
 import { GameEntity } from './entities/game.entity';
 import PlayerState, {
+  AroundPlayerState,
   CheckoutPlayerState,
   DefaultPlayerState,
   TargetPlayerState,
@@ -26,6 +27,9 @@ export default class PlayerStateFactory {
         break;
       case 'checkouts':
         playerState = CheckoutPlayerState.create(user, game.gameId);
+        break;
+      case 'around':
+        playerState = AroundPlayerState.create(user, game.gameId);
         break;
       default:
         playerState = DefaultPlayerState.create(user, game.gameId);

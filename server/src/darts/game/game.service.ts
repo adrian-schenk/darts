@@ -66,16 +66,6 @@ export default class DartsGameService {
       res = await createdGame.save();
     }
 
-    if (!(await this.getGameState(res.gameId))) {
-      let gameState: GameState =
-        await this.gameStateFactory.createGameStateFromMode(mode, res.gameId);
-      gameState.joinable = false;
-
-      gameState.addPlayer(user, await this.playerStateFactory.createPlayerState(user, res.gameId), new HumanPlayerController());
-
-      await this.setGameState(res.gameId, gameState);
-    }
-
     return res;
   }
 
