@@ -9,9 +9,7 @@ enum MMType {
   UNRANKED,
 }
 
-const QueueModeConfigs = {
-  
-}
+const QueueModeConfigs = {};
 
 @Injectable()
 export default class MatchmakingService {
@@ -89,11 +87,12 @@ export default class MatchmakingService {
         users.filter((u) => u.user.id !== user.id),
       );
     }
+    console.log(`User ${user.username} left queue`);
   }
   
   getQueueNameFromConfig(config: any) {
 
-    let key = '' + config.gameConfig.startingScore + '/' + config.gameConfig.checkoutMode + '/' + (config.ranked ?? 'unranked');
+    let key = '' + config.gameConfig.startingScore + '/' + config.gameConfig.checkoutMode + '/' + (config.type ?? 'unranked');
 
     if (!QueueModeConfigs[key]) {
       QueueModeConfigs[key] = key;

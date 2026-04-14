@@ -1,8 +1,10 @@
-import { Body, Controller, Get, Headers, HttpException, HttpStatus, Post, Query, Req, UseGuards } from "@nestjs/common"
+import { Body, Controller, Get, Headers, HttpException, HttpStatus, Post, Query, Req, UseGuards, UsePipes } from "@nestjs/common"
 import MatchmakingService from "./mm.service"
 import { Public } from "src/auth/public.decorator"
 import { JwtAuthGuard } from "src/auth/jwt-auth.guard"
 import ConnectionsService from "src/ws/connections.service";
+import { joinQueueSchema, type JoinQueueDTO } from "./joinQueueDTO";
+import { ZodValidationPipe } from "src/pipes/ZodValidationPipe";
 
 @UseGuards(JwtAuthGuard)
 @Controller('api')
@@ -10,7 +12,8 @@ export class MatchmakingController {
   constructor(private readonly matchmakingService: MatchmakingService, private readonly connectionsService: ConnectionsService) {}
 
   @Post('join-queue')
-  joinQueue(@Body() body: { gameConfig: { startingScore: 501 | 301, checkoutMode: 'open' | 'double-out' | 'master-out' }, ranked?: 'unranked' | 'ranked' }, @Req() req, @Headers() headers) {
+  @UsePipes(new ZodValidationPipe(joinQueueSchema))
+  joinQueue(@Body() body: JoinQueueDTO, @Req() req, @Headers() headers) {
 
     if (this.connectionsService.getClientById(headers['x-socket-id']) == null || this.connectionsService.getClientById(headers['x-socket-id'])?.data.userId != req.user.id) {
       throw new HttpException('Unauthorized: Socket ID is missing or does not match the authenticated user', HttpStatus.BAD_REQUEST);

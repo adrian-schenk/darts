@@ -117,14 +117,14 @@ export class ApiController {
 
     const game: GameEntity = await this.dartsGameService.createDartGame(
       req.user,
-      'local-game',
+      body.mode ?? 'standard',
     );
 
     await game.set('owner', req.user.id).save();
 
     if (!(await this.dartsGameService.getGameState(game.gameId))) {
       let gameState: GameState =
-        await this.gameStateFactory.createGameStateFromMode('', game.gameId);
+        await this.gameStateFactory.createGameStateFromMode(body.mode ?? 'standard', game.gameId);
       gameState.joinable = false;
 
       let player1Controller = new HumanPlayerController();

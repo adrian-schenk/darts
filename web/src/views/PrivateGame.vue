@@ -4,25 +4,14 @@
       <!-- Local Games Mode Selection -->
       <template v-if="!selectedMode">
 
-        <div class="text-2xl font-bold mb-2">Regular modes</div>
+        <div class="text-2xl font-bold mb-2">Select Mode</div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <button v-for="mode in regularModes" :key="mode.value" @click="selectMode(mode, 'local')"
+          <button v-for="mode in regularModes" :key="mode.value" @click="selectMode(mode)"
             class="group relative bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-blue-600 rounded-lg p-6 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-500/50 transition-all duration-300 text-left">
             <div class="absolute inset-0 bg-blue-500/0 group-hover:bg-blue-500/5 rounded-lg transition-colors"></div>
             <h3 class="text-xl font-bold text-white mb-2 relative">{{ mode.icon }} {{ mode.label }}</h3>
             <p class="text-gray-400 relative text-sm mb-4 min-h-10">{{ mode.desc }}</p>
             <div class="text-blue-400 text-xs font-semibold relative group-hover:text-blue-300">Play →</div>
-          </button>
-        </div>
-
-        <div class="text-2xl font-bold mb-2">Training modes</div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <button v-for="mode in trainingModes" :key="mode.value" @click="selectMode(mode, 'training')"
-            :class="['group relative bg-gradient-to-br from-slate-800 to-slate-900 border-2 rounded-lg p-6 hover:shadow-lg transition-all duration-300 text-left', getTrainingModeClass(mode.value)]">
-            <div :class="['absolute inset-0 rounded-lg transition-colors', getTrainingModeBgClass(mode.value)]"></div>
-            <h3 class="text-xl font-bold text-white mb-2 relative">{{ mode.icon }} {{ mode.label }}</h3>
-            <p class="text-gray-400 relative text-sm mb-4 min-h-10">{{ mode.desc }}</p>
-            <div :class="['text-xs font-semibold relative', getTrainingModeTextClass(mode.value)]">Practice →</div>
           </button>
         </div>
       </template>
@@ -86,8 +75,6 @@ const playerRefs = ref<Map<string, InstanceType<typeof Player> | null>>(new Map(
 const dartboardRef = ref<InstanceType<typeof Dartboard> | null>(null)
 const playerRefSetters = new Map<string, (el: unknown) => void>()
 
-type SelectedMode = GameMode & { category: 'local' | 'training' }
-
 const selectedMode = ref<SelectedMode | null>(null)
 const selectedModeSettings = ref<ModeSettings>({})
 const isStarting = ref(false)
@@ -107,8 +94,8 @@ const getPlayerRefSetter = (playerUuid: string) => {
   return playerRefSetters.get(playerUuid)!
 }
 
-const selectMode = (mode: GameMode, category: 'local' | 'training') => {
-  selectedMode.value = { ...mode, category }
+const selectMode = (mode: GameMode) => {
+  selectedMode.value = { ...mode }
   selectedModeSettings.value = { ...mode.settingsDefaults }
 }
 
@@ -122,20 +109,15 @@ const startGame = async () => {
 
   isStarting.value = true
   try {
-    const { category, value } = selectedMode.value
+    const { value } = selectedMode.value
 
     let url = ''
     let body = {}
 
-    if (category === 'local') {
-      // For local games, use the local game endpoint
-      url = '/api/create-local/'
-      body = { mode: value, settings: selectedModeSettings.value }
-    } else {
-      // For training, use the training endpoint
-      url = '/api/create-training/' + value
-      body = { settings: selectedModeSettings.value }
-    }
+    // For local games, use the local game endpoint
+    url = '/api/create-local/'
+    body = { mode: value, settings: selectedModeSettings.value }
+    
     
     const response = await fetch(url, {
       method: 'POST',

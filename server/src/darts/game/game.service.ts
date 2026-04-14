@@ -85,7 +85,7 @@ export default class DartsGameService {
     status: string = 'open',
   ) {
 
-    const createdGame = new this.gameModel();
+    const createdGame = new this.gameModel({ mode: mode });
     let res = await createdGame.save();
 
     return res;

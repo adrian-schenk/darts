@@ -21,12 +21,6 @@ export default class GameStateFactory {
     let gameState: GameState;
     const game = await this.gameModel.findOne({ gameId: gameId }).exec();
     switch (game?.mode) {
-      case 'target':
-        gameState = GameState.create(gameId);
-        break;
-      case 'checkouts':
-        gameState = GameState.create(gameId);
-        break;
       default:
         gameState = GameState.create(gameId);
         break;

@@ -43,7 +43,7 @@ export const regularModes: GameMode[] = [
         label: false,
         presets: [
           { name: 'local', label: 'Local opponent', icon: '👤', description: 'Play against a local opponent' },
-          //{ name: 'friend', label: 'Friend', icon: '👥', description: 'Play against a friend online' },
+          { name: 'friend', label: 'Friend', icon: '👥', description: 'Play against a friend online' },
           { name: 'bot', label: 'Bot', icon: '🤖', description: 'Play against a bot' },
         ],
         classes: {
@@ -66,7 +66,7 @@ export const regularModes: GameMode[] = [
     ]),
   },
   {
-    value: 'around-the-clock',
+    value: 'around',
     label: 'Around The Clock',
     icon: '🔄',
     desc: 'Hit all numbers in sequence from 1 to 20.',
@@ -76,23 +76,39 @@ export const regularModes: GameMode[] = [
       'First player to complete the sequence wins',
       'Great for targeting practice',
     ],
-    settingsDefaults: {},
-    settingsSchema: [],
-  },
-  {
-    value: 'bulling',
-    label: 'Bulling',
-    icon: '🎯',
-    desc: 'First to hit the bullseye wins.',
-    details: [
-      'All players aim for the bullseye',
-      'First to hit the bull wins',
-      'Quick and exciting',
-      'Great for warm-ups',
+    settingsDefaults: {
+      opponent: 'local',
+    },
+    settingsSchema: [
+      {
+        $formkit: 'enemyConfig',
+        name: 'opponent',
+        label: false,
+        presets: [
+          { name: 'local', label: 'Local opponent', icon: '👤', description: 'Play against a local opponent' },
+          { name: 'friend', label: 'Friend', icon: '👥', description: 'Play against a friend online' },
+          { name: 'bot', label: 'Bot', icon: '🤖', description: 'Play against a bot' },
+        ],
+        classes: {
+          'wrapper': 'max-w-[unset]!',
+        }
+      },
     ],
-    settingsDefaults: {},
-    settingsSchema: [],
   },
+  // {
+  //   value: 'bulling',
+  //   label: 'Bulling',
+  //   icon: '🎯',
+  //   desc: 'First to hit the bullseye wins.',
+  //   details: [
+  //     'All players aim for the bullseye',
+  //     'First to hit the bull wins',
+  //     'Quick and exciting',
+  //     'Great for warm-ups',
+  //   ],
+  //   settingsDefaults: {},
+  //   settingsSchema: [],
+  // },
   {
     value: 'max-score',
     label: 'Max Score',
