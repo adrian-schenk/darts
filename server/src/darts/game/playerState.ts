@@ -21,6 +21,7 @@ export enum PlayerActionState {
   IDLE,
   THROW_DARTS,
   REMOVE_DARTS,
+  REMOVE_DARTS_WON,
   TIMEOUT,
 }
 
@@ -51,6 +52,8 @@ export class PlayerState extends JsonSerializable {
   numThrows: number = 0;
 
   state: PlayerActionState;
+  @Exclude()
+  wonPlayerActionState: PlayerActionState | null = null;
 
   showStats: any = {
     player: {
@@ -104,7 +107,7 @@ export class PlayerState extends JsonSerializable {
     this.state = PlayerActionState.THROW_DARTS;
   }
 
-  protected setShowPlayerStat(stat: string, value: boolean) {
+  public setShowPlayerStat(stat: string, value: boolean) {
     this.showStats.player[stat] = value;
   }
 
@@ -226,7 +229,7 @@ export class DefaultPlayerState extends PlayerState {
     if (this.score <= 0) {
       this.stats.trackStat('percentage_checkout', StatType.PERCENTAGE, 1);
       this.stats.trackStat('max_checkout', StatType.MAX, this.saveScore);
-      this.state = PlayerActionState.REMOVE_DARTS;
+      this.state = this.wonPlayerActionState ?? PlayerActionState.REMOVE_DARTS_WON;
     }
   }
 
@@ -360,7 +363,6 @@ export class CheckoutPlayerState extends DefaultPlayerState {
 
   constructor() {
     super();
-    this.setSaveScore(Number(this.getRandomTarget()));
     this.setShowPlayerStat('showName', false);
     this.setShowPlayerStat('showSets', false);
     this.setShowPlayerStat('showLegs', false);
@@ -384,49 +386,13 @@ export class CheckoutPlayerState extends DefaultPlayerState {
   }
 
   public onRoundEnd(game: GameState): void {
-    this.setSaveScore(Number(this.getRandomTarget()));
+    this.setSaveScore(Number(game.newRoundTarget()));
   }
 
   public hasRoundEnded(game: GameState): boolean {
     return this.score <= 0;
   }
 
-  public getRandomTarget() {
-    switch (this.difficulty) {
-      case PracticeDifficulty.EASY:
-        return Object.keys(checkoutLogic.possibleCheckouts)
-          .map(Number)
-          .filter((score) => score <= 60)[
-          Math.floor(
-            Math.random() * Object.keys(checkoutLogic.possibleCheckouts).length,
-          )
-        ];
-      case PracticeDifficulty.MEDIUM:
-        return Object.keys(checkoutLogic.possibleCheckouts)
-          .map(Number)
-          .filter((score) => score <= 120)[
-          Math.floor(
-            Math.random() * Object.keys(checkoutLogic.possibleCheckouts).length,
-          )
-        ];
-      case PracticeDifficulty.HARD:
-        return Object.keys(checkoutLogic.possibleCheckouts)
-          .map(Number)
-          .filter((score) => score <= 170)[
-          Math.floor(
-            Math.random() * Object.keys(checkoutLogic.possibleCheckouts).length,
-          )
-        ];
-      case PracticeDifficulty.AUTO:
-        return 130;
-      default:
-        return Object.keys(checkoutLogic.possibleCheckouts).map(Number)[
-          Math.floor(
-            Math.random() * Object.keys(checkoutLogic.possibleCheckouts).length,
-          )
-        ];
-    }
-  }
 }
 
 export const playerStateTypeMap: Record<string, new () => PlayerState> = {

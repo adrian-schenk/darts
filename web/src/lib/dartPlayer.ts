@@ -6,6 +6,7 @@ export enum PlayerActionState {
   IDLE,
   THROW_DARTS,
   REMOVE_DARTS,
+  REMOVE_DARTS_WON,
   TIMEOUT,
 }
 
@@ -93,7 +94,7 @@ export class DartPlayer {
     const playerGameState = gameState.playerStates?.[this.uuid] ?? gameState
     const board = this.getBoard()
     if (
-      this.state.value == PlayerActionState.REMOVE_DARTS &&
+      (this.state.value == PlayerActionState.REMOVE_DARTS || this.state.value == PlayerActionState.REMOVE_DARTS_WON) &&
       this.state.value != playerGameState.state &&
       board
     ) {

@@ -157,7 +157,7 @@
       </div>
     </div>
     <div
-      v-if="playerInterface?.state == PlayerActionState.REMOVE_DARTS && props.clickToAddMarker"
+      v-if="(playerInterface?.state == PlayerActionState.REMOVE_DARTS || playerInterface?.state == PlayerActionState.REMOVE_DARTS_WON) && props.clickToAddMarker"
       class="absolute bg-slate-700/80 w-full h-full flex flex-col items-center justify-center top-0 left-0"
     >
       <button
@@ -195,7 +195,7 @@ onMounted(() => {
     playerInterface.value = new DartPlayer({ uuid: '', name: '' })
     socket.on('player-event', (msg: any) => {
       for (const playerState of msg.playerStates ? Object.values(msg.playerStates) : [msg]) {
-        if (playerState.state == PlayerActionState.REMOVE_DARTS) {
+        if (playerState.state == PlayerActionState.REMOVE_DARTS || playerState.state == PlayerActionState.REMOVE_DARTS_WON) {
           playerInterface.value!.state = PlayerActionState.REMOVE_DARTS
           return
         }

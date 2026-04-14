@@ -150,8 +150,8 @@ export class ApiController {
 
       let player2User = body.settings.opponent.type === 'bot' ? BotUser : req.user;
 
-      gameState.addPlayer(req.user.id, await this.playerStateFactory.createPlayerStateFromConfig(req.user, game.gameId, body.settings, 0), player1Controller);
-      gameState.addPlayer(player2User.id, await this.playerStateFactory.createPlayerStateFromConfig(player2User, game.gameId, body.settings, 1), player2Controller);
+      gameState.addPlayer(req.user.id, await this.playerStateFactory.createMultiPlayerStateFromConfig(req.user, game.gameId, body.settings, 0), player1Controller);
+      gameState.addPlayer(player2User.id, await this.playerStateFactory.createMultiPlayerStateFromConfig(player2User, game.gameId, body.settings, 1), player2Controller);
       gameState.setRandomTurn();
 
       await this.dartsGameService.setGameState(game.gameId, gameState);

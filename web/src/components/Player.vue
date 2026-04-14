@@ -4,7 +4,7 @@
     :class="PlayerInterface.state.value === PlayerActionState.IDLE ? 'opacity-50' : ''"
   >
     <slot />
-    <div v-if="props.player.showStats.player.showName" class="text-4xl text-white font-bold">
+    <div v-if="props.player.showStats.player.showName" class="text-4xl text-white font-bold my-4">
       {{ props.player.playerName }}
     </div>
     <div
@@ -15,7 +15,13 @@
       <div class="h-8 border-l border-gray-600 mx-4"></div>
       <div class="m-4">{{ PlayerInterface.getPlayerStat('legs') }} legs</div>
     </div>
-    <div :class="['text-8xl text-white my-4 font-bold', PlayerInterface.currentTargetHit.value ? 'text-green-500!' : '']">{{ PlayerInterface.score.value != null ? PlayerInterface.score : PlayerInterface.getCurrentTarget() }}</div>
+    <div v-if="PlayerInterface.state.value !== PlayerActionState.REMOVE_DARTS_WON" :class="['text-8xl text-white my-4 font-bold', PlayerInterface.currentTargetHit.value ? 'text-green-500!' : '']">{{ PlayerInterface.score.value != null ? PlayerInterface.score : PlayerInterface.getCurrentTarget() }}</div>
+    <template v-else>
+      <div class="bg-slate-700 top-1/2 w-1/2 h-22 flex flex-col items-center justify-center rounded-xl">
+        <p class="text-white text-2xl font-bold">{{ props.player.playerName }}</p>
+        <p class="text-grey font-bold">has won the leg!</p>
+      </div>
+    </template>
     <div class="flex justify-center items-center gap-2 mt-4 text-gray-400">
       <div
         v-if="!PlayerInterface.currentTarget.value"

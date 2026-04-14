@@ -20,6 +20,10 @@ import JsonSerializable from 'src/util/JsonSerializable';
 import { v4 as uuidv4 } from 'uuid';
 import { BotPlayerController } from './controllers/botPlayer.controller';
 import { HumanPlayerController } from './controllers/humanPlayer.controller';
+import { DartsCheckoutLogicService } from '../logic/checkout.service';
+
+const checkoutLogic: DartsCheckoutLogicService =
+  new DartsCheckoutLogicService();
 
 enum GameStateType {
   PLAYING = 'PLAYING',
@@ -192,6 +196,7 @@ export class GameState extends JsonSerializable {
 
       if (this.playerStates.get(this.currentPlayer)?.hasRoundEnded(this)) {
         this.playerStates.get(this.currentPlayer)?.stats.winLeg(3);
+        this.onPreRoundEnd();
         this.playerStates.forEach((ps, uuid) => {
           ps.onRoundEnd(this);
         });
@@ -204,6 +209,9 @@ export class GameState extends JsonSerializable {
     }
     return false;
   }
+
+  protected onPreRoundEnd() {}
+  public newRoundTarget(): any {}
 
   switchTurn() {
     const previousPlayer = this.currentPlayer;
@@ -254,8 +262,18 @@ export class GameState extends JsonSerializable {
         playerUuid = playerState.uuid;
         this.playerStates.set(playerUuid, playerState);
 
+        playerState.wonPlayerActionState = PlayerActionState.REMOVE_DARTS;
+        playerState.onRoundEnd(this);
+
         if (!this.currentPlayer) {
           this.setTurn(playerState.uuid);
+        }
+
+        if (this.playerStates.size >= 2) {
+          this.isMultiplayer = true;
+          this.playerStates.forEach((ps) => {
+            ps.wonPlayerActionState = PlayerActionState.REMOVE_DARTS_WON;
+          });
         }
       }
       this.users.set(user.uuid, String(user.id));
@@ -288,4 +306,80 @@ export class GameState extends JsonSerializable {
       ]),
     );
   }
+}
+
+enum PracticeDifficulty {
+  EASY = 'easy',
+  MEDIUM = 'medium',
+  HARD = 'hard',
+  AUTO = 'auto',
+}
+
+export class CheckoutGameState extends GameState {
+
+  @Exclude({ toPlainOnly: true })
+  checkoutScore: number;
+
+  difficulty: PracticeDifficulty = PracticeDifficulty.AUTO;
+
+  constructor() {
+    super();
+    this.checkoutScore = this.getRandomTarget();
+  }
+
+  static create(gameId: string) {
+    let gameState = new CheckoutGameState();
+    gameState.gameId = gameId;
+    return gameState;
+  }
+
+  protected onPreRoundEnd(): void {
+    this.checkoutScore = this.getRandomTarget();
+  }
+
+  public newRoundTarget(): any {
+    return this.checkoutScore;
+  }
+
+  public getRandomTarget() {
+    switch (this.difficulty) {
+      case PracticeDifficulty.EASY:
+        return Object.keys(checkoutLogic.possibleCheckouts)
+          .map(Number)
+          .filter((score) => score <= 60)[
+          Math.floor(
+            Math.random() * Object.keys(checkoutLogic.possibleCheckouts).length,
+          )
+        ];
+      case PracticeDifficulty.MEDIUM:
+        return Object.keys(checkoutLogic.possibleCheckouts)
+          .map(Number)
+          .filter((score) => score <= 120)[
+          Math.floor(
+            Math.random() * Object.keys(checkoutLogic.possibleCheckouts).length,
+          )
+        ];
+      case PracticeDifficulty.HARD:
+        return Object.keys(checkoutLogic.possibleCheckouts)
+          .map(Number)
+          .filter((score) => score <= 170)[
+          Math.floor(
+            Math.random() * Object.keys(checkoutLogic.possibleCheckouts).length,
+          )
+        ];
+      case PracticeDifficulty.AUTO:
+        return Object.keys(checkoutLogic.possibleCheckouts).map(Number)[
+          Math.floor(
+            Math.random() * Object.keys(checkoutLogic.possibleCheckouts).length,
+          )
+        ];
+      default:
+        return Object.keys(checkoutLogic.possibleCheckouts).map(Number)[
+          Math.floor(
+            Math.random() * Object.keys(checkoutLogic.possibleCheckouts).length,
+          )
+        ];
+    }
+  }
+
 }

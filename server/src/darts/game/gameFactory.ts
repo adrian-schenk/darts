@@ -1,6 +1,6 @@
 import { Model } from 'mongoose';
 import { GameEntity } from './entities/game.entity';
-import { GameState } from './gameState';
+import { CheckoutGameState, GameState } from './gameState';
 import { InjectModel } from '@nestjs/mongoose/dist/common/mongoose.decorators';
 import { DartEventEntity } from '../darts_event/dart_event.entity';
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
@@ -21,6 +21,9 @@ export default class GameStateFactory {
     let gameState: GameState;
     const game = await this.gameModel.findOne({ gameId: gameId }).exec();
     switch (game?.mode) {
+      case 'checkouts':
+        gameState = CheckoutGameState.create(gameId);
+        break;
       default:
         gameState = GameState.create(gameId);
         break;

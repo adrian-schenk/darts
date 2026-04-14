@@ -17,7 +17,7 @@ export const createLocalGameSchema = z.object({
       })),
       sets: z.number().optional(),
       legs: z.number().optional()
-    })),
+    })).optional(),
     opponent: z.object({
       type: z.string(),
       difficulty: z.string().optional()

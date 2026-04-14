@@ -95,6 +95,36 @@ export const regularModes: GameMode[] = [
       },
     ],
   },
+  {
+    value: 'checkouts',
+    label: 'Checkouts',
+    icon: '✓',
+    desc: 'Practice finishing combinations and checkout strategies.',
+    details: [
+      'Learn popular checkout combinations',
+      'Practice finishing from various scores',
+      'Understand outs and doubles',
+      'Essential skill for competitive play',
+    ],
+    settingsDefaults: {
+      opponent: 'local',
+    },
+    settingsSchema: [
+      {
+        $formkit: 'enemyConfig',
+        name: 'opponent',
+        label: false,
+        presets: [
+          { name: 'local', label: 'Local opponent', icon: '👤', description: 'Play against a local opponent' },
+          { name: 'friend', label: 'Friend', icon: '👥', description: 'Play against a friend online' },
+          { name: 'bot', label: 'Bot', icon: '🤖', description: 'Play against a bot' },
+        ],
+        classes: {
+          'wrapper': 'max-w-[unset]!',
+        }
+      },
+    ],
+  },
   // {
   //   value: 'bulling',
   //   label: 'Bulling',
