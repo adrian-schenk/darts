@@ -25,9 +25,16 @@ describe('DartsCheckoutLogicService', () => {
     );
   });
 
-  it('should allow single out if requireDoubleOut is false', () => {
-    const checkouts = service.findCheckouts(40, 3, false);
+  it('should allow single out in open mode', () => {
+    const checkouts = service.findCheckouts(40, 3, 'open');
     expect(checkouts.some((c) => !c.darts[c.darts.length - 1].isDouble)).toBe(
+      true,
+    );
+  });
+
+  it('should allow triple out in master-out mode', () => {
+    const checkouts = service.findCheckouts(60, 1, 'master-out');
+    expect(checkouts.some((c) => c.darts[c.darts.length - 1].display === 'T20')).toBe(
       true,
     );
   });

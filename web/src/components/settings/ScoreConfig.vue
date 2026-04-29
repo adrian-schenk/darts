@@ -17,7 +17,7 @@ const scoringDetails = {
 }
 
 const checkoutDetails = {
-  'open': { name: 'Open', description: 'Any combination of darts can be used to checkout.' },
+  'open': { name: 'Straight-Out', description: 'Any combination of darts can be used to checkout.' },
   'double-out': { name: 'Double-Out', description: 'The final dart must land in a double area to checkout.' },
   'master-out': { name: 'Master-Out', description: 'The final dart must land in a double, triple or the bullseye to checkout.' }
 }

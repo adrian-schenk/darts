@@ -208,7 +208,7 @@ export class DefaultPlayerState extends PlayerState {
     });
 
     // Check for bust
-    if (!this.setScore(this.score - fieldScore)) {
+    if (!checkoutLogic.isValidCheckoutThrow(this.score, fieldScore, this.checkoutMode) || !this.setScore(this.score - fieldScore)) {
       this.currentThrows.at(-1)!.invalid = true;
       this.checkoutCombination = [];
       this.setScore(this.saveScore);
@@ -249,7 +249,7 @@ export class DefaultPlayerState extends PlayerState {
   }
 
   public setScore(score: number): boolean {
-    if (score >= 0 && checkoutLogic.scoreFinishable(score)) {
+    if (score >= 0 && checkoutLogic.scoreFinishable(score, this.checkoutMode)) {
       this.score = score;
       this.recalculateCheckoutCombination();
       return true;
@@ -269,12 +269,13 @@ export class DefaultPlayerState extends PlayerState {
   }
 
   public recalculateCheckoutCombination(): void {
-    if (checkoutLogic.checkoutPossible(this.score)) {
+    if (checkoutLogic.checkoutPossible(this.score, this.checkoutMode)) {
       let combo =
         checkoutLogic
           .findCheckouts(
             this.score,
             this.throwsPerTurn - this.currentThrows.length,
+            this.checkoutMode
           )[0]
           ?.darts.map((dart) => dart.display) || [];
       this.checkoutCombination = Array(this.currentThrows.length)

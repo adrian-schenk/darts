@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { log } from 'console';
+
+export type CheckoutMode = 'open' | 'double-out' | 'master-out';
 
 export interface DartScore {
   value: number;
@@ -22,20 +23,47 @@ export class DartsCheckoutLogicService {
   constructor() {
     this.initializeValidScores();
     for (let score = 2; score <= 170; score++) {
-      if (this.checkoutPossible(score)) this.possibleCheckouts[score] = true;
+      if (this.checkoutPossible(score, 'double-out')) this.possibleCheckouts[score] = true;
     }
   }
 
-  public scoreFinishable(score: number): boolean {
-    return score == 0 || score > 170 || this.checkoutPossible(score);
+  private getMaxFinishScore(checkoutMode: CheckoutMode): number {
+    if (checkoutMode === 'double-out') {
+      return 170;
+    }
+    return 180;
   }
 
-  public checkoutPossible(score: number): boolean {
-    if (score < 2 || score > 170) {
+  private getMinFinishScore(checkoutMode: CheckoutMode): number {
+    return checkoutMode === 'open' ? 1 : 2;
+  }
+
+  public scoreFinishable(score: number, checkoutMode: CheckoutMode = 'double-out'): boolean {
+    const maxFinishScore = this.getMaxFinishScore(checkoutMode);
+    return score == 0 || score > maxFinishScore || this.checkoutPossible(score, checkoutMode);
+  }
+
+  public checkoutPossible(score: number, checkoutMode: CheckoutMode = 'double-out'): boolean {
+    if (
+      score < this.getMinFinishScore(checkoutMode) ||
+      score > this.getMaxFinishScore(checkoutMode)
+    ) {
       return false;
     }
-    return this.findCheckouts(score).length > 0;
+    return this.findCheckouts(score, 3, checkoutMode).length > 0;
   }
+
+  public isValidCheckoutThrow(score: number, throwScore: number, checkoutMode: CheckoutMode = 'double-out'): boolean {
+    const remainingScore = score - throwScore;
+    if (remainingScore < 0) return false;
+    if (remainingScore === 0) {
+      const dart = this.validScores.find(d => d.value * d.multiplier === throwScore);
+      if (!dart) return false;
+      return this.isValidFinishingDart(dart, checkoutMode);
+    }
+    return true;
+  }
+
 
   private initializeValidScores(): void {
     // Single bull (25)
@@ -98,7 +126,7 @@ export class DartsCheckoutLogicService {
   public findCheckouts(
     score: number,
     throwsLeft: number = 3,
-    requireDoubleOut: boolean = true,
+    checkoutMode: CheckoutMode = 'double-out',
   ): Checkout[] {
     const checkouts: Checkout[] = [];
 
@@ -109,7 +137,7 @@ export class DartsCheckoutLogicService {
     this.findCheckoutsRecursive(
       score,
       throwsLeft,
-      requireDoubleOut,
+      checkoutMode,
       [],
       checkouts,
     );
@@ -117,10 +145,22 @@ export class DartsCheckoutLogicService {
     return checkouts;
   }
 
+  private isValidFinishingDart(dart: DartScore, checkoutMode: CheckoutMode): boolean {
+    switch (checkoutMode) {
+      case 'open':
+        return true;
+      case 'master-out':
+        return dart.multiplier === 2 || dart.multiplier === 3;
+      case 'double-out':
+      default:
+        return dart.isDouble;
+    }
+  }
+
   private findCheckoutsRecursive(
     remainingScore: number,
     throwsLeft: number,
-    requireDoubleOut: boolean,
+    checkoutMode: CheckoutMode,
     currentDarts: DartScore[],
     results: Checkout[],
   ): void {
@@ -161,16 +201,16 @@ export class DartsCheckoutLogicService {
 
       // Last dart logic
       if (throwsLeft === 1 || dartTotal === remainingScore) {
-        // If we need double out and this finishes the score
+        // Validate finishing throw against the selected checkout mode.
         if (dartTotal === remainingScore) {
-          if (requireDoubleOut && !dart.isDouble) {
-            continue; // Must finish on a double
+          if (!this.isValidFinishingDart(dart, checkoutMode)) {
+            continue;
           }
           // Valid finish
           this.findCheckoutsRecursive(
             remainingScore - dartTotal,
             throwsLeft - 1,
-            requireDoubleOut,
+            checkoutMode,
             [...currentDarts, dart],
             results,
           );
@@ -179,7 +219,7 @@ export class DartsCheckoutLogicService {
           this.findCheckoutsRecursive(
             remainingScore - dartTotal,
             throwsLeft - 1,
-            requireDoubleOut,
+            checkoutMode,
             [...currentDarts, dart],
             results,
           );
@@ -189,7 +229,7 @@ export class DartsCheckoutLogicService {
         this.findCheckoutsRecursive(
           remainingScore - dartTotal,
           throwsLeft - 1,
-          requireDoubleOut,
+          checkoutMode,
           [...currentDarts, dart],
           results,
         );
