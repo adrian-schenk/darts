@@ -14,6 +14,7 @@ import GameStateFactory from './gameFactory';
 import { GameState } from './gameState';
 import PlayerStateFactory from './stateFactory';
 import { BotPlayerController } from './controllers/botPlayer.controller';
+import { randomBytes } from 'crypto';
 
 @Injectable()
 export default class DartsGameService {
@@ -94,9 +95,16 @@ export default class DartsGameService {
 
     let gameState: GameState =
       await this.gameStateFactory.createGameStateFromMode(config.mode, res.gameId);
-
+    gameState.isLocal = false;
+    
     for (const [user, controllerType] of users) {
-      gameState.addPlayer(user, await this.playerStateFactory.createPlayerState(user, res.gameId), controllerType != 'bot' ? new HumanPlayerController() : new BotPlayerController());
+      let playerState = await this.playerStateFactory.createPlayerState(user, res.gameId);
+
+      if (controllerType == 'bot') {
+        playerState.playername = String(randomBytes(4).toString('hex'));
+      }
+
+      gameState.addPlayer(user, playerState, controllerType != 'bot' ? new HumanPlayerController() : new BotPlayerController());
     }
 
     gameState.setRandomTurn();
@@ -148,7 +156,7 @@ export default class DartsGameService {
       });
     }
     this.setGameState(gameId, gameState!);
-    socket.emit('game-update', await this.getGameUpdateData(gameId));
+    socket.emit('game-update', await this.getGameUpdateData(gameId), await this.getGameCapabilities(gameId));
     socket.emit('player-event', gameState);
   }
 
@@ -188,6 +196,11 @@ export default class DartsGameService {
         ),
       ),
     );
+  }
+
+  async getGameCapabilities(gameId: string) {
+    const gameState = await this.getGameState(gameId);
+    return gameState?.getCapabilities() || {};
   }
 
   async userCanJoinGame(gameId: string, user: User | null): Promise<boolean> {

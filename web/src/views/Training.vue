@@ -30,6 +30,7 @@
       <Player
         class="flex-auto h-auto w-full"
         :player="player"
+        :capabilities="gameCapabilities"
         :ref="getPlayerRefSetter(playeruuid)"
         :show-history="true"
         :dart-board-ref="dartboardRefs.get(playeruuid) ?? undefined"
@@ -68,6 +69,7 @@ let { socket, status, data, send, close } = useSocket()
 const props = defineProps<{ gameId?: string }>()
 const mode = ref('')
 
+const gameCapabilities = ref<any>(null)
 const localPlayer = ref<any>(null)
 const players = ref<Map<string, any>>(new Map())
 const playerRefs = ref<Map<string, InstanceType<typeof Player> | null>>(new Map())
@@ -119,10 +121,11 @@ onMounted(() => {
           }
         }
 
-        socket.on('game-update', (gameState: any) => {
+        socket.on('game-update', (gameState: any, capabilities: any) => {
           for (const [uuid, player] of Object.entries(gameState)) {
             players.value.set(uuid, player)
           }
+          gameCapabilities.value = capabilities
         })
 
         await send('join-game', { gameId: props.gameId })

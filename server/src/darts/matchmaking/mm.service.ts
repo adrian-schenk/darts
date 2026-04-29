@@ -25,12 +25,14 @@ export default class MatchmakingService {
 
   async doMatchMaking() {
     for (const [mode, users] of this.queue.entries()) {
-      for (const user of users) {
-        if (Date.now() - user.timestamp > 30000) {
-          this.leaveQueue(user.user);
-          let { gameId } = await this.gameService.createMultiPlayerGame([[user.user, 'human'], [BotUser, 'bot']], { mode });
+      if (QueueModeConfigs[mode]?.type != 'ranked') {
+        for (const user of users) {
+          if (Date.now() - user.timestamp > 30000) {
+            this.leaveQueue(user.user);
+            let { gameId } = await this.gameService.createMultiPlayerGame([[user.user, 'human'], [BotUser, 'bot']], { mode });
 
-          this.connectionsService.broadcast([user.socketId], 'match_found', { gameId });
+            this.connectionsService.broadcast([user.socketId], 'match_found', { gameId });
+          }
         }
       }
       if (users.length >= 2) {

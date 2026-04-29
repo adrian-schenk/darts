@@ -4,11 +4,11 @@
     :class="PlayerInterface.state.value === PlayerActionState.IDLE ? 'opacity-50' : ''"
   >
     <slot />
-    <div v-if="props.player.showStats.player.showName" class="text-4xl text-white font-bold my-4">
+    <div v-if="props.capabilities.showStats.player.showName" class="text-4xl text-white font-bold my-4">
       {{ props.player.playerName }}
     </div>
     <div
-      v-if="props.player.showStats.player.showSets"
+      v-if="props.capabilities.showStats.player.showSets"
       class="flex justify-center items-center mt-4 text-gray-400"
     >
       <div class="m-4">{{ PlayerInterface.getPlayerStat('sets') }} sets</div>
@@ -117,6 +117,7 @@ import type { Throw } from '@/lib/dart'
 
 const props = defineProps({
   player: { type: Object, required: true },
+  capabilities: { type: Object, default: () => ({}) },
   showHistory: { type: Boolean, default: true },
   uuid: { type: String, default: '' },
   dartBoardRef: { type: Object, default: null },
@@ -129,7 +130,7 @@ const PlayerInterface = new DartPlayer({
 })
 
 const visibleStatsEntries = computed(() =>
-  Object.entries(props.player.showStats.data ?? {}).filter(([, isVisible]) => isVisible),
+  Object.entries(props.capabilities.showStats.data ?? {}).filter(([, isVisible]) => isVisible),
 )
 
 watch(

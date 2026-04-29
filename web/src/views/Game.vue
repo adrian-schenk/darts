@@ -3,7 +3,7 @@
     <div class="flex flex-col gap-4 w-full h-full flex-auto">
       <div class="flex flex-row gap-4">
         <Player v-for="[playeruuid, player] of players" :key="playeruuid" class="flex-auto h-auto w-full"
-          :player="player" :ref="getPlayerRefSetter(playeruuid)" :show-history="true"
+          :player="player" :capabilities="gameCapabilities" :ref="getPlayerRefSetter(playeruuid)" :show-history="true"
           :dart-board-ref="dartboardRef ?? undefined" :uuid="playeruuid">
         </Player>
       </div>
@@ -29,6 +29,7 @@ const mode = ref('')
 
 const localPlayer = ref<any>(null)
 const spectating = ref<boolean>(false)
+const gameCapabilities = ref<any>(null)
 const players = ref<Map<string, any>>(new Map())
 const playerRefs = ref<Map<string, InstanceType<typeof Player> | null>>(new Map())
 const dartboardRef = ref<InstanceType<typeof Dartboard> | null>(null)
@@ -63,10 +64,12 @@ onMounted(() => {
           }
         }
         
-        socket.on('game-update', (gameState: any) => {
+        socket.on('game-update', (gameState: any, capabilities: any) => {
+          console.log(gameState, capabilities)
           for (const [uuid, player] of Object.entries(gameState)) {
             players.value.set(uuid, player)
           }
+          gameCapabilities.value = capabilities
         })
 
         await send('join-game', { gameId: props.gameId })

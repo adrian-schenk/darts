@@ -28,6 +28,11 @@ const checkoutLogic: DartsCheckoutLogicService =
 enum GameStateType {
   PLAYING = 'PLAYING',
   BULLING_OFF = 'BULLING_OFF',
+  SCORECORRECTION = 'SCORECORRECTION',
+  TIMEOUT = 'TIMEOUT',
+  OPPONENT_LEFT = 'OPPONENT_LEFT',
+  RESIGNED = 'RESIGNED',
+  FINISHED = 'FINISHED',
 }
 
 export class GameState extends JsonSerializable {
@@ -37,6 +42,9 @@ export class GameState extends JsonSerializable {
 
   @Exclude()
   isMultiplayer: boolean = false;
+
+  @Exclude()
+  isLocal: boolean = true;
 
   @Exclude({ toPlainOnly: true })
   @Transform(
@@ -305,6 +313,14 @@ export class GameState extends JsonSerializable {
         },
       ]),
     );
+  }
+
+  getCapabilities() {
+    const capabilities: any = {};
+
+    capabilities.showStats = this.playerStates.get(this.currentPlayer)?.showStats || false;
+
+    return capabilities;
   }
 }
 

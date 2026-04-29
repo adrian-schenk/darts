@@ -55,6 +55,7 @@ export class PlayerState extends JsonSerializable {
   @Exclude()
   wonPlayerActionState: PlayerActionState | null = null;
 
+  @Exclude({ toPlainOnly: true })
   showStats: any = {
     player: {
       showName: true,

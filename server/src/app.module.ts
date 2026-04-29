@@ -14,6 +14,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { MongooseModule } from '@nestjs/mongoose';
 import { WsModule } from './ws/ws.module';
 import { RedisModule } from '@nestjs-modules/ioredis';
+import { SocialModule } from './social/social.module';
 
 @Module({
   imports: [
@@ -74,6 +75,7 @@ import { RedisModule } from '@nestjs-modules/ioredis';
     ApiModule,
     AuthModule,
     WsModule,
+    SocialModule,
   ],
   controllers: [AppController],
   providers: [

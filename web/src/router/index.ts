@@ -40,7 +40,7 @@ const router = createRouter({
         { path: 'progress', component: () => import('../views/Dashboard.vue') },
         { path: 'statistics', component: () => import('../views/Dashboard.vue') },
         { path: 'profile', component: () => import('../views/Dashboard.vue') },
-        { path: 'friends', component: () => import('../views/Dashboard.vue') },
+        { path: 'social', component: () => import('../views/Social.vue') },
         { path: 'settings', component: () => import('../views/Dashboard.vue') },
         { path: '/:pathMatch(.*)', component: () => import('../views/NotFound.vue') },
       ],
