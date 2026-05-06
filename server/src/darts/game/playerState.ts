@@ -178,6 +178,8 @@ export class DefaultPlayerState extends PlayerState {
 
   @Exclude()
   checkoutMode: 'open' | 'double-out' | 'master-out' = 'double-out';
+  @Exclude()
+  startMode: 'straight-in' | 'double-in' | 'master-in' = 'straight-in';
 
   @Exclude()
   throwsPerTurn = 3;

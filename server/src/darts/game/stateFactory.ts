@@ -56,6 +56,7 @@ export default class PlayerStateFactory {
     if (playerState instanceof DefaultPlayerState && !(playerState instanceof CheckoutPlayerState)) {
       (playerState as DefaultPlayerState).setInitialScore(config.gameConfig?.players?.[player]?.startingScore || 501);
       (playerState as DefaultPlayerState).checkoutMode = config.gameConfig?.players?.[player]?.checkoutMode || 'double-out';
+      (playerState as DefaultPlayerState).startMode = config.gameConfig?.players?.[player]?.startMode || 'straight-in';
     }
 
     playerState.setShowPlayerStat('showName', true);

@@ -127,7 +127,7 @@ export class ApiController {
 
   @Post('/create-local/')
   @UsePipes(new ZodValidationPipe(createLocalGameSchema))
-  async createLocal(@Req() req, @Headers() headers: any, @Body() body: any, mode?: string) {
+  async createLocal(@Req() req, @Headers() headers: any, @Body() body: any) {
     
     if (this.connectionsService.getClientById(headers['x-socket-id']) == null || this.connectionsService.getClientById(headers['x-socket-id'])?.data.userId != req.user.id) {
       throw new HttpException('Unauthorized: Socket ID is missing or does not match the authenticated user', HttpStatus.BAD_REQUEST);

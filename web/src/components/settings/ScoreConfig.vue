@@ -16,6 +16,12 @@ const scoringDetails = {
   501: { name: '501', description: 'Players start with 501 points and the first to reach exactly 0 wins.' },
 }
 
+const startDetails = {
+  'straight-in': { name: 'Straight-In', description: 'Players can start scoring with any dart.' },
+  'double-in': { name: 'Double-In', description: 'Players must hit a double area to start scoring.' },
+  'master-in': { name: 'Master-In', description: 'Players must hit a double, triple or the bullseye to start scoring.' }
+}
+
 const checkoutDetails = {
   'open': { name: 'Straight-Out', description: 'Any combination of darts can be used to checkout.' },
   'double-out': { name: 'Double-Out', description: 'The final dart must land in a double area to checkout.' },
@@ -23,6 +29,10 @@ const checkoutDetails = {
 }
 const checkouts = computed<string[]>(() => {
   return (props.context?.node?.props?.checkouts) ?? ['open', 'double-out', 'master-out']
+})
+
+const starts = computed<string[]>(() => {
+  return (props.context?.node?.props?.starts) ?? ['straight-in', 'double-in', 'master-in']
 })
 
 type PlayerConfig = {
@@ -36,6 +46,7 @@ const opponent = useFormKitValue('opponent', props.context?.node);
 const selectedValue = ref<number>(501)
 const isCustomSelected = ref(false)
 const selectedCheckout = ref<string>('double-out')
+const selectedStart = ref<string>('straight-in')
 const sets = ref<number>(2)
 const legs = ref<number>(3)
 
@@ -68,6 +79,11 @@ const selectCustomScore = () => {
 const selectCheckout = (checkout: string) => {
   selectedCheckout.value = checkout
   setNodeValue({ startingScore: selectedValue.value, checkoutMode: checkout })
+}
+
+const selectStart = (start: string) => {
+  selectedStart.value = start
+  setNodeValue({ startMode: start })
 }
 
 watch(players, () => {
@@ -106,7 +122,22 @@ watch(legs, (val) => patchNodeValue({ legs: val }))
       </div>
     </div>
 
-    <!-- Shared checkout mode (non-custom presets) -->
+    <!-- Shared config (non-custom presets) -->
+    <div v-if="!isCustomSelected">
+      <div class="text-sm font-semibold text-gray-300 my-2">Start</div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+        <button v-for="start in starts" :key="start" :class="[
+          'relative bg-gradient-to-br from-slate-800 to-slate-900 border-2 rounded-lg p-6 transition-all duration-300 text-left',
+          selectedStart === start
+            ? 'border-cyan-300 shadow-lg shadow-cyan-500/40'
+            : 'border-blue-600 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-500/50'
+        ]" @click="() => { selectStart(start) }" type="button">
+          <div class="text-xl font-bold text-white mb-2 relative">{{ startDetails[start].name }}</div>
+          <div class="text-gray-400 relative text-sm mb-4 min-h-10">{{ startDetails[start].description }}</div>
+        </button>
+      </div>
+    </div>
+
     <div v-if="!isCustomSelected">
       <div class="text-sm font-semibold text-gray-300 my-2">Checkout</div>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
@@ -135,6 +166,19 @@ watch(legs, (val) => patchNodeValue({ legs: val }))
         <label class="block text-xs text-gray-400 mb-1">Starting Score</label>
         <input type="number" v-model.number="player.startingScore"
           class="w-full mb-4 px-4 py-2 border-gray-600 border-2 rounded bg-slate-900/70 text-white" />
+
+       <label class="block text-xs text-gray-400 mb-2">Start</label>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <button v-for="start in starts" :key="start" type="button" :class="[
+            'bg-gradient-to-br from-slate-700 to-slate-800 border-2 rounded-lg p-3 transition-all duration-200 text-left',
+            player.startMode === start
+              ? 'border-cyan-300 shadow-lg shadow-cyan-500/40'
+              : 'border-blue-700 hover:border-blue-400'
+          ]" @click="player.startMode = start">
+            <div class="text-sm font-bold text-white">{{ startDetails[start].name }}</div>
+            <div class="text-xs text-gray-400 mt-1">{{ startDetails[start].description }}</div>
+          </button>
+        </div>
 
         <label class="block text-xs text-gray-400 mb-2">Checkout</label>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
