@@ -156,7 +156,7 @@ export default class DartsGameService {
       });
     }
     this.setGameState(gameId, gameState!);
-    socket.emit('game-update', await this.getGameUpdateData(gameId), await this.getGameCapabilities(gameId));
+    socket.emit('game-update', await this.getGameUpdateData(gameId, socket.data.user), await this.getGameCapabilities(gameId));
     socket.emit('player-event', gameState);
   }
 
@@ -176,11 +176,11 @@ export default class DartsGameService {
     this.joinedClients.delete(gameId);
   }
 
-  async getGameUpdateData(gameId: string) {
+  async getGameUpdateData(gameId: string, user: User) {
     return await this.getGameState(gameId).then(async (state) =>
       Object.fromEntries(
         await Promise.all(
-          Object.entries(state?.getGameUpdateData() ?? {}).map(
+          Object.entries(state?.getGameUpdateData() ?? {}).sort(([uuid, playerState]) => playerState.userId === user.id ? -1 : 1).map(
             async ([uuid, playerState]) => [
               uuid,
               {
