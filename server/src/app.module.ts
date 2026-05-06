@@ -15,6 +15,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { WsModule } from './ws/ws.module';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { SocialModule } from './social/social.module';
+import { StatsModule } from './stats/stats.module';
 
 @Module({
   imports: [
@@ -76,6 +77,7 @@ import { SocialModule } from './social/social.module';
     AuthModule,
     WsModule,
     SocialModule,
+    StatsModule,
   ],
   controllers: [AppController],
   providers: [
