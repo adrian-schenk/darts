@@ -9,6 +9,7 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 // https://vite.dev/config/
 export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, './', '')
+  const backendUrl = env.VITE_BACKEND_URL || 'http://localhost:3000'
   
   return {
     plugins: [
@@ -17,17 +18,19 @@ export default defineConfig(({ command, mode }) => {
       vueDevTools(),
     ],
     server: {
+      host: '0.0.0.0',
+      port: Number(env.FRONTEND_PORT || 5173),
       proxy: {
         '/auth': {
-          target: 'http://localhost:3000',
+          target: backendUrl,
           changeOrigin: true,
         },
         '/api': {
-          target: 'http://localhost:3000',
+          target: backendUrl,
           changeOrigin: true,
         },
         '/socket.io': {
-          target: 'http://localhost:3000',
+          target: backendUrl,
           changeOrigin: true,
           ws: true,
         },
