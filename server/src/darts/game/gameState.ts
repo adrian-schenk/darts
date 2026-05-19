@@ -218,6 +218,27 @@ export class GameState extends JsonSerializable {
     return false;
   }
 
+  async onTimeGone() {
+
+    this.playerStates.get(this.currentPlayer)?.onDartRemove();
+
+    if (this.playerStates.get(this.currentPlayer)?.hasRoundEnded(this)) {
+      this.playerStates.get(this.currentPlayer)?.stats.winLeg(3);
+      this.onPreRoundEnd();
+      this.playerStates.forEach((ps, uuid) => {
+        ps.onRoundEnd(this);
+      });
+      this.nextRound();
+    }
+
+    this.switchTurn();
+
+    await this.providers.gameService.setGameState(this.gameId, this);
+
+    this.providers.gameService.broadcast(this.gameId, 'dart-event', { type: 'dart_remove' });
+    this.providers.gameService.broadcast(this.gameId, 'player-event', this);
+  }
+
   protected onPreRoundEnd() {}
   public newRoundTarget(): any {}
 
@@ -238,7 +259,7 @@ export class GameState extends JsonSerializable {
     }
 
     this.currentPlayer = playerUuid;
-    this.playerStates.get(this.currentPlayer)!.setTurn();
+    this.playerStates.get(this.currentPlayer)!.setTurn(this);
 
     if (this.controllers.has(this.currentPlayer)) {
       this.controllers.get(this.currentPlayer)?.planTurn(this);
@@ -264,7 +285,7 @@ export class GameState extends JsonSerializable {
     let playerUuid = '';
 
     if (!this.playerStates.has(ps.uuid)) {
-      let playerState = this.playerStates.get(user.uuid);
+      let playerState = this.playerStates.get(ps.uuid);
       if (!playerState) {
         playerState = ps;
         playerUuid = playerState.uuid;
@@ -298,6 +319,15 @@ export class GameState extends JsonSerializable {
     return playerUuid;
   }
 
+  getPlayerUuid(user: User): string | null {
+    for (let [uuid, playerState] of this.playerStates.entries()) {
+      if (playerState.userId == user.id) {
+        return uuid;
+      }
+    }
+    return null;
+  }
+
   getPlayerStates() {
     return this.playerStates;
   }
@@ -319,6 +349,11 @@ export class GameState extends JsonSerializable {
     const capabilities: any = {};
 
     capabilities.showStats = this.playerStates.get(this.currentPlayer)?.showStats || false;
+
+    capabilities.showPlayerTime = true;
+    capabilities.timeoutPossible = true;
+
+    capabilities.allowScoreCorrection = true;
 
     return capabilities;
   }

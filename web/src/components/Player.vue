@@ -4,6 +4,29 @@
     :class="PlayerInterface.state.value === PlayerActionState.IDLE ? 'opacity-50' : ''"
   >
     <slot />
+    <div v-if="props.capabilities.showPlayerTime && PlayerInterface.state.value === PlayerActionState.THROW_DARTS" class="absolute top-3 right-3 flex items-center gap-2">
+      <button
+        v-if="PlayerInterface.state.value == PlayerActionState.THROW_DARTS && props.capabilities.timeoutPossible && props.isOwnPlayer"
+        class="rounded-full border border-slate-500/40 bg-slate-800/80 p-2 text-slate-200 transition hover:bg-slate-700/90 hover:text-white cursor-pointer"
+        @click="PlayerInterface.requestTimeout()"
+      >
+        <pause-circle class="h-5 w-5"></pause-circle>
+      </button>
+      <div class="flex items-center gap-2 rounded-full border border-slate-500/50 bg-slate-900/70 px-3 py-1.5 backdrop-blur-sm shadow-md">
+        <div
+          :class="[
+            'h-2.5 w-2.5 rounded-full',
+            remainingTimeDotClass,
+            PlayerInterface.remainingTime.value !== null && PlayerInterface.remainingTime.value <= 5
+              ? 'animate-pulse'
+              : '',
+          ]"
+        ></div>
+        <div class="font-mono text-base font-bold tabular-nums" :class="remainingTimeTextClass">
+          {{ formattedRemainingTime }}
+        </div>
+      </div>
+    </div>
     <div v-if="props.capabilities.showStats.player.showName" class="text-4xl text-white font-bold my-4">
       {{ props.player.playerName }}
     </div>
@@ -114,12 +137,14 @@
 import { computed, onBeforeUnmount, watch } from 'vue'
 import { DartPlayer, PlayerActionState } from '@/lib/dartPlayer.ts'
 import type { Throw } from '@/lib/dart'
+import { PauseCircle } from 'lucide-vue-next'
 
 const props = defineProps({
   player: { type: Object, required: true },
   capabilities: { type: Object, default: () => ({}) },
   showHistory: { type: Boolean, default: true },
   uuid: { type: String, default: '' },
+  isOwnPlayer: { type: Boolean, default: false },
   dartBoardRef: { type: Object, default: null },
 })
 
@@ -127,6 +152,34 @@ const PlayerInterface = new DartPlayer({
   uuid: props.uuid,
   name: '',
   dartboardRef: props.dartBoardRef,
+})
+
+const formattedRemainingTime = computed(() => {
+  const timeLeft = PlayerInterface.remainingTime.value
+  if (timeLeft === null || Number.isNaN(timeLeft)) return '--:--'
+
+  const totalSeconds = Math.max(0, Math.floor(timeLeft))
+  const minutes = Math.floor(totalSeconds / 60)
+    .toString()
+    .padStart(2, '0')
+  const seconds = (totalSeconds % 60).toString().padStart(2, '0')
+  return `${minutes}:${seconds}`
+})
+
+const remainingTimeTextClass = computed(() => {
+  const timeLeft = PlayerInterface.remainingTime.value
+  if (timeLeft === null) return 'text-slate-200'
+  if (timeLeft <= 5) return 'text-red-300'
+  if (timeLeft <= 10) return 'text-amber-300'
+  return 'text-emerald-300'
+})
+
+const remainingTimeDotClass = computed(() => {
+  const timeLeft = PlayerInterface.remainingTime.value
+  if (timeLeft === null) return 'bg-slate-300'
+  if (timeLeft <= 5) return 'bg-red-400'
+  if (timeLeft <= 10) return 'bg-amber-400'
+  return 'bg-emerald-400'
 })
 
 const visibleStatsEntries = computed(() =>

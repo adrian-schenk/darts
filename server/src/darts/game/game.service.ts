@@ -141,7 +141,11 @@ export default class DartsGameService {
 
       this.joinedClients.get(gameId)?.push(socket);
 
-      socket.emit('join-game', { success: true });
+      let uuid: string | null | undefined = null;
+      if (!gameState?.isLocal)
+          uuid = gameState?.getPlayerUuid(socket.data.user);
+
+      socket.emit('join-game', { success: true, playerId: uuid });
     } else {
       // Add to spectating clients
       if (!this.spectatingClients.has(gameId)) {

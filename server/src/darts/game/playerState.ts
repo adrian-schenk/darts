@@ -13,6 +13,7 @@ import { User } from 'src/users/user.entity';
 import PlayerStats, { StatType } from './playerStats';
 import { GameState } from './gameState';
 import { number_fields } from './utils';
+import { ExpressLoader } from '@nestjs/serve-static';
 
 const checkoutLogic: DartsCheckoutLogicService =
   new DartsCheckoutLogicService();
@@ -22,6 +23,7 @@ export enum PlayerActionState {
   THROW_DARTS,
   REMOVE_DARTS,
   REMOVE_DARTS_WON,
+  REQUEST_TIMEOUT,
   TIMEOUT,
 }
 
@@ -77,6 +79,12 @@ export class PlayerState extends JsonSerializable {
   )
   stats: PlayerStats = new PlayerStats();
 
+  remainingTime: number | null = null;
+
+  @Exclude()
+  @Transform(() => null)
+  remainingTimeIntervalId: any = null;
+
   constructor() {
     super();
     this.uuid = uuidv4();
@@ -104,8 +112,20 @@ export class PlayerState extends JsonSerializable {
     return false;
   }
 
-  public setTurn() {
+  public setTurn(gamestate: GameState) {
     this.state = PlayerActionState.THROW_DARTS;
+    clearInterval(this.remainingTimeIntervalId!);
+    this.remainingTime = 30;
+    this.remainingTimeIntervalId = setInterval(() => {
+      if (this.remainingTime !== null && this.state === PlayerActionState.THROW_DARTS) {
+        this.remainingTime = Math.max(0, this.remainingTime - 1);
+      }
+      if (this.remainingTime == 0) {
+        gamestate.onTimeGone();
+        clearInterval(this.remainingTimeIntervalId!);
+        this.remainingTimeIntervalId = null;
+      }
+    }, 1000);
   }
 
   public setShowPlayerStat(stat: string, value: boolean) {

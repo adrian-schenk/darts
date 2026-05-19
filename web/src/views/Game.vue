@@ -4,10 +4,10 @@
       <div class="flex flex-row gap-4">
         <Player v-for="[playeruuid, player] of players" :key="playeruuid" class="flex-auto h-auto w-full"
           :player="player" :capabilities="gameCapabilities" :ref="getPlayerRefSetter(playeruuid)" :show-history="true"
-          :dart-board-ref="dartboardRef ?? undefined" :uuid="playeruuid">
+          :dart-board-ref="dartboardRef ?? undefined" :uuid="playeruuid" :is-own-player="playeruuid == localPlayer">
         </Player>
       </div>
-      <Dartboard ref="dartboardRef" class="flex-auto w-full" :click-to-add-marker="!spectating"></Dartboard>
+      <Dartboard ref="dartboardRef" class="flex-auto w-full" :click-to-add-marker="!spectating" :uuid="localPlayer"></Dartboard>
     </div>
   </div>
   <RouterView />

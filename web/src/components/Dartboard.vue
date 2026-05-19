@@ -181,6 +181,7 @@ let props = defineProps({
   clickToAddMarker: { type: Boolean, default: false },
   showScore: { type: Boolean, default: true },
   playerInterface: { type: DartPlayer, default: null },
+  uuid: { type: String, default: '' },
 })
 
 const playerInterface = ref(props.playerInterface)
@@ -192,7 +193,7 @@ const highlightedSegment = ref<string | null>('single-20')
 onMounted(() => {
   // For local games, theres only one dartboard, so create a "dummy" Dartplayer that listens to all events
   if (!playerInterface.value) {
-    playerInterface.value = new DartPlayer({ uuid: '', name: '' })
+    playerInterface.value = new DartPlayer({ uuid: props.uuid, name: '' })
     socket.on('player-event', (msg: any) => {
       for (const playerState of msg.playerStates ? Object.values(msg.playerStates) : [msg]) {
         if (playerState.state == PlayerActionState.REMOVE_DARTS || playerState.state == PlayerActionState.REMOVE_DARTS_WON) {

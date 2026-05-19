@@ -7,6 +7,7 @@ export enum PlayerActionState {
   THROW_DARTS,
   REMOVE_DARTS,
   REMOVE_DARTS_WON,
+  REQUEST_TIMEOUT,
   TIMEOUT,
 }
 
@@ -54,11 +55,15 @@ export class DartPlayer {
 
   scoreLog = ref<Throw[]>([])
 
-  state = ref<PlayerActionState>(PlayerActionState.THROW_DARTS)
+  state = ref<PlayerActionState>(PlayerActionState.IDLE)
 
   stats = ref<any>(null)
 
   socket: any = null
+
+  remainingTime = ref<number | null>(null)
+
+  private remainingTimeIntervalId: ReturnType<typeof setInterval> | null = null
 
   constructor(public info: DartPlayerInfo) {
     this.uuid = info.uuid
@@ -99,6 +104,21 @@ export class DartPlayer {
       board
     ) {
       board.clearMarkers?.()
+    }
+
+    if (
+      playerGameState.state === PlayerActionState.THROW_DARTS && (this.state.value == PlayerActionState.REMOVE_DARTS || this.state.value == PlayerActionState.REMOVE_DARTS_WON || this.state.value == PlayerActionState.IDLE)
+    ) {
+      this.remainingTime.value = playerGameState.remainingTime ?? null
+      if (this.remainingTimeIntervalId !== null) {
+        clearInterval(this.remainingTimeIntervalId)
+        this.remainingTimeIntervalId = null
+      }
+      this.remainingTimeIntervalId = setInterval(() => {
+        if (this.remainingTime.value !== null && this.state.value === PlayerActionState.THROW_DARTS) {
+          this.remainingTime.value = Math.max(0, this.remainingTime.value - 1)
+        }
+      }, 1000)
     }
 
     this.state.value = playerGameState.state
@@ -143,6 +163,10 @@ export class DartPlayer {
   }
 
   dispose() {
+    if (this.remainingTimeIntervalId !== null) {
+      clearInterval(this.remainingTimeIntervalId)
+      this.remainingTimeIntervalId = null
+    }
     this.socket?.off?.('dart-event', this.handleDartEvent)
     this.socket?.off?.('player-event', this.handlePlayerEvent)
   }
@@ -156,6 +180,10 @@ export class DartPlayer {
 
   endTurn() {
     this.socket.emit('dart-event', { type: 'dart_remove' })
+  }
+
+  requestTimeout() {
+    this.socket.emit('player-event', { type: 'request_timeout' })
   }
 
   getFieldName = (id: string) => {
