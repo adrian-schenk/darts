@@ -108,6 +108,8 @@ export class ApiController {
       mode,
     );
 
+    game.set('isPrivate', true);
+
     await game.set('owner', req.user.id).save();
 
     if (!(await this.dartsGameService.getGameState(game.gameId))) {

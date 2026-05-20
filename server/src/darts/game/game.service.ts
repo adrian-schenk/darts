@@ -54,6 +54,7 @@ export default class DartsGameService {
       .findOne({
         owner: Number(user.id),
         mode: mode,
+        isPrivate: true,
         createdAt: { $gte: new Date(Date.now() - 12 * 60 * 60 * 1000) },
       })
       .exec();

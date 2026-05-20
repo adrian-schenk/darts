@@ -16,6 +16,9 @@ export class GameEntity extends Document {
   @Prop({ default: '' })
   mode: string;
 
+  @Prop({ default: false })
+  isPrivate: boolean;
+
   @Prop({ default: '' })
   status: string;
 
