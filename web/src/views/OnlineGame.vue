@@ -36,7 +36,7 @@ import ButtonTitle from '@/components/ui/ButtonTitle.vue'
 import getBearer from '@/lib/auth'
 import useSocket from '@/lib/socket'
 import router from '@/router'
-import { computed, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 
 let { socketId, socket, status, data, send, close } = useSocket()
 
@@ -76,6 +76,23 @@ const stopQueueTimer = () => {
   queueStartedAt.value = null;
   queueElapsedSeconds.value = 0;
 };
+
+onMounted(() => {
+  fetch('/api/queued', {
+    headers: { Authorization: getBearer(), 'X-Socket-Id': socket.id ?? '' },
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      console.log(data)
+      if (data.success) {
+        queued.value = data.queued;
+        startQueueTimer();
+      }
+    })
+    .catch((err) => {
+      console.error('Error fetching queue status:', err);
+    });
+});
 
 onUnmounted(() => {
   stopQueueTimer();

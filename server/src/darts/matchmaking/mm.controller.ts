@@ -11,6 +11,12 @@ import { ZodValidationPipe } from "src/pipes/ZodValidationPipe";
 export class MatchmakingController {
   constructor(private readonly matchmakingService: MatchmakingService, private readonly connectionsService: ConnectionsService) {}
 
+  @Get('queued')
+  isQueued(@Req() req) {
+    const user = req.user
+    return { success: true, queued: this.matchmakingService.isUserInQueue(user) };
+  }
+
   @Post('join-queue')
   @UsePipes(new ZodValidationPipe(joinQueueSchema))
   joinQueue(@Body() body: JoinQueueDTO, @Req() req, @Headers() headers) {
