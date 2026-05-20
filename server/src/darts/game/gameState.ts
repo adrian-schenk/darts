@@ -350,8 +350,8 @@ export class GameState extends JsonSerializable {
 
     capabilities.showStats = this.playerStates.get(this.currentPlayer)?.showStats || false;
 
-    capabilities.showPlayerTime = true;
-    capabilities.timeoutPossible = true;
+    capabilities.showPlayerTime = !this.isLocal;
+    capabilities.timeoutPossible = !this.isLocal;
 
     capabilities.allowScoreCorrection = true;
 

@@ -81,9 +81,15 @@ export class PlayerState extends JsonSerializable {
 
   remainingTime: number | null = null;
 
+  removeDartsRemainingTime: number | null = null;
+
   @Exclude()
   @Transform(() => null)
   remainingTimeIntervalId: any = null;
+
+  @Exclude()
+  @Transform(() => null)
+  removeDartsRemainingTimeIntervalId: any = null;
 
   constructor() {
     super();
@@ -115,6 +121,8 @@ export class PlayerState extends JsonSerializable {
   public setTurn(gamestate: GameState) {
     this.state = PlayerActionState.THROW_DARTS;
     clearInterval(this.remainingTimeIntervalId!);
+    clearInterval(this.removeDartsRemainingTimeIntervalId!);
+    this.removeDartsRemainingTime = 5;
     this.remainingTime = 30;
     this.remainingTimeIntervalId = setInterval(() => {
       if (this.remainingTime !== null && this.state === PlayerActionState.THROW_DARTS) {
@@ -124,6 +132,17 @@ export class PlayerState extends JsonSerializable {
         gamestate.onTimeGone();
         clearInterval(this.remainingTimeIntervalId!);
         this.remainingTimeIntervalId = null;
+      }
+    }, 1000);
+
+    this.removeDartsRemainingTimeIntervalId = setInterval(() => {
+      if (this.removeDartsRemainingTime !== null && this.state === PlayerActionState.REMOVE_DARTS) {
+        this.removeDartsRemainingTime = Math.max(0, this.removeDartsRemainingTime - 1);
+      }
+      if (this.removeDartsRemainingTime == 0) {
+        gamestate.onTimeGone();
+        clearInterval(this.removeDartsRemainingTimeIntervalId!);
+        this.removeDartsRemainingTimeIntervalId = null;
       }
     }, 1000);
   }
