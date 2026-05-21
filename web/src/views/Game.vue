@@ -65,7 +65,6 @@ onMounted(() => {
         }
         
         socket.on('game-update', (gameState: any, capabilities: any) => {
-          console.log(gameState, capabilities)
           for (const [uuid, player] of Object.entries(gameState)) {
             players.value.set(uuid, player)
           }
