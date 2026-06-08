@@ -8,6 +8,7 @@ import MatchmakingService from 'src/darts/matchmaking/mm.service';
 @Injectable()
 export default class ConnectionsService {
   private clientsMap: Map<string, Socket> = new Map();
+  private usersMap: Map<string, Array<Socket>> = new Map();
 
   constructor(
     private jwtStrategy: JwtStrategy,
@@ -38,6 +39,10 @@ export default class ConnectionsService {
       );
       client.data.user = user;
       client.data.userId = user.id;
+      if (!this.usersMap.has(user.id.toString())) {
+        this.usersMap.set(user.id.toString(), []);
+      }
+      this.usersMap.get(user.id.toString())!.push(client);
     } catch (err) {
       console.error(`Authentication error for client ${client.id}:`, err);
       client.emit('error', { message: 'Unauthorized', status: 401 });
@@ -52,6 +57,18 @@ export default class ConnectionsService {
   handleDisconnect(client: Socket) {
     console.log(`Client disconnected: ${client.id}`);
     this.clientsMap.delete(client.id);
+    if (client.data.userId) {
+      const userSockets = this.usersMap.get(client.data.userId.toString());
+      if (userSockets) {
+        const index = userSockets.indexOf(client);
+        if (index !== -1) {
+          userSockets.splice(index, 1);
+        }
+        if (userSockets.length === 0) {
+          this.usersMap.delete(client.data.userId.toString());
+        }
+      }
+    }
     this.gameService.leaveDartGame(client.data.gameId, client);
   }
 
@@ -72,6 +89,17 @@ export default class ConnectionsService {
       throw new Error('User not found for socket');
     }
     return client.data.user;
+  }
+
+  broadcastToUsers(users: string[], event: string, data: any) {
+    for (const userId of users) {
+      const userSockets = this.usersMap.get(userId);
+      if (userSockets) {
+        for (const socket of userSockets) {
+          socket.emit(event, data);
+        }
+      }
+    }
   }
 
   broadcast(socketIds: string[], event: string, data: any) {
