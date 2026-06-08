@@ -137,7 +137,7 @@ export class PlayerState extends JsonSerializable {
     }
     
     clearInterval(this.removeDartsRemainingTimeIntervalId!);
-    this.removeDartsRemainingTime = 5;
+    this.removeDartsRemainingTime = 2;
     const removeDartsIntervalId = setInterval(() => {
       if (this.removeDartsRemainingTime !== null && (this.state === PlayerActionState.REMOVE_DARTS || this.state === PlayerActionState.REMOVE_DARTS_WON)) {
         this.removeDartsRemainingTime = Math.max(0, this.removeDartsRemainingTime - 1);

@@ -22,6 +22,7 @@ import { BotPlayerController } from './controllers/botPlayer.controller';
 import { HumanPlayerController } from './controllers/humanPlayer.controller';
 import { DartsCheckoutLogicService } from '../logic/checkout.service';
 import DartsGameService from './game.service';
+import type { GameEndHandler } from './gameEndHandler';
 
 const checkoutLogic: DartsCheckoutLogicService =
   new DartsCheckoutLogicService();
@@ -129,6 +130,8 @@ export class GameState extends JsonSerializable {
   @Exclude({ toPlainOnly: true })
   state: GameStateType;
 
+  winnerPlayerUuid: string | null = null;
+
   @Exclude({ toPlainOnly: true })
   roundUuid: string;
 
@@ -142,6 +145,7 @@ export class GameState extends JsonSerializable {
   constructor() {
     super();
     this.roundUuid = uuidv4();
+    this.state = GameStateType.PLAYING;
   }
 
   static create(gameId: string) {
@@ -151,6 +155,10 @@ export class GameState extends JsonSerializable {
   }
 
   async trigger(event: string, user: User, payload: any) {
+    if (this.state === GameStateType.FINISHED) {
+      return;
+    }
+
     if (!this.isCurrentPlayer(user)) {
       return;
     }
@@ -159,7 +167,7 @@ export class GameState extends JsonSerializable {
         this.onDartHit(user, payload.throw);
         break;
       case 'dart_remove':
-        this.onDartRemove(user);
+        await this.onDartRemove(user);
         break;
       default:
         console.warn('Unknown dart event type:', payload.type);
@@ -197,7 +205,7 @@ export class GameState extends JsonSerializable {
     return false;
   }
 
-  onDartRemove(user: User): Boolean {
+  async onDartRemove(user: User): Promise<Boolean> {
     if (
       this.currentPlayer &&
       this.playerStates.get(this.currentPlayer)?.userId === user.id
@@ -205,12 +213,17 @@ export class GameState extends JsonSerializable {
       this.playerStates.get(this.currentPlayer)?.onDartRemove();
 
       if (this.playerStates.get(this.currentPlayer)?.hasRoundEnded(this)) {
-        this.playerStates.get(this.currentPlayer)?.stats.winLeg(3);
+        const winnerUuid = this.currentPlayer;
+        this.playerStates.get(winnerUuid)?.stats.winLeg(this.getLegsPerSet());
         this.onPreRoundEnd();
         this.playerStates.forEach((ps, uuid) => {
           ps.onRoundEnd(this);
         });
         this.nextRound();
+
+        if (await this.tryFinishGame(winnerUuid)) {
+          return true;
+        }
       }
 
       this.switchTurn();
@@ -222,15 +235,26 @@ export class GameState extends JsonSerializable {
 
   async onTimeGone() {
 
+    if (this.state === GameStateType.FINISHED) {
+      return;
+    }
+
     this.playerStates.get(this.currentPlayer)?.onDartRemove();
 
     if (this.playerStates.get(this.currentPlayer)?.hasRoundEnded(this)) {
-      this.playerStates.get(this.currentPlayer)?.stats.winLeg(3);
+      const winnerUuid = this.currentPlayer;
+      this.playerStates.get(winnerUuid)?.stats.winLeg(this.getLegsPerSet());
       this.onPreRoundEnd();
       this.playerStates.forEach((ps, uuid) => {
         ps.onRoundEnd(this);
       });
       this.nextRound();
+
+      if (await this.tryFinishGame(winnerUuid)) {
+        await this.providers.gameService.setGameState(this.gameId, this);
+        this.providers.gameService.broadcast(this.gameId, 'player-event', this);
+        return;
+      }
     }
 
     this.switchTurn();
@@ -257,12 +281,16 @@ export class GameState extends JsonSerializable {
 
   isCurrentPlayer(user: User): boolean {
     return (
+      this.state !== GameStateType.FINISHED &&
       this.currentPlayer !== undefined &&
       this.playerStates.get(this.currentPlayer)?.userId === user.id
     );
   }
 
   switchTurn() {
+    if (this.state === GameStateType.FINISHED) {
+      return;
+    }
 
     if (this.playerStates.size <= 1) {
       this.setTurn(this.currentPlayer);
@@ -278,6 +306,10 @@ export class GameState extends JsonSerializable {
   }
 
   setTurn(playerUuid: string) {
+    if (this.state === GameStateType.FINISHED) {
+      return;
+    }
+
     const previousPlayer = this.currentPlayer;
     if (previousPlayer && previousPlayer !== playerUuid) {
       this.playerStates.get(previousPlayer)!.state = PlayerActionState.IDLE;
@@ -376,11 +408,58 @@ export class GameState extends JsonSerializable {
     capabilities.showStats = this.playerStates.get(this.currentPlayer)?.showStats || false;
 
     capabilities.showPlayerTime = !this.isLocal;
-    capabilities.timeoutPossible = !this.isLocal;
 
     capabilities.allowScoreCorrection = true;
+    capabilities.finished = this.state === GameStateType.FINISHED;
+    capabilities.winnerPlayerUuid = this.winnerPlayerUuid;
 
     return capabilities;
+  }
+
+  private getLegsPerSet(): number {
+    return Number(this.config?.gameConfig?.legs ?? 3);
+  }
+
+  private getSetsNeededToWin(): number {
+    return 4;
+  }
+
+  private hasPlayerWonGame(playerUuid: string): boolean {
+    if (!this.isMultiplayer || this.playerStates.size <= 1) {
+      return false;
+    }
+
+    const setsWon = Number(
+      this.playerStates.get(playerUuid)?.stats?.stats?.sets?.value ?? 0,
+    );
+
+    return setsWon >= this.getSetsNeededToWin();
+  }
+
+  private async tryFinishGame(playerUuid: string): Promise<boolean> {
+    if (this.state === GameStateType.FINISHED) {
+      return true;
+    }
+
+    if (!this.hasPlayerWonGame(playerUuid)) {
+      return false;
+    }
+
+    this.state = GameStateType.FINISHED;
+    this.winnerPlayerUuid = playerUuid;
+    this.joinable = false;
+
+    const gameEndHandler = this.providers.gameEndHandler as
+      | GameEndHandler
+      | undefined;
+
+    await gameEndHandler?.onGameFinished({
+      gameState: this,
+      winnerPlayerUuid: playerUuid,
+      isRanked: Boolean(this.config?.isRanked),
+    });
+
+    return true;
   }
 }
 

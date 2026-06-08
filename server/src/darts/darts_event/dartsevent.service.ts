@@ -31,6 +31,8 @@ export default class DartsEventService {
 
     gameState!.providers.dartEventModel = this.dartEventModel;
     gameState!.providers.gameService = this.gameService;
+    gameState!.providers.gameEndHandler =
+      await this.gameService.resolveGameEndHandler(socket.data.gameId);
     await gameState.trigger(msg.type, socket.data.user, msg);
   }
 

@@ -13,10 +13,10 @@ export enum StatType {
 export default class PlayerStats {
   stats: any = {
     legs: {
-      value: 0,
+      value: 1,
     },
     sets: {
-      value: 0,
+      value: 3,
     },
   };
 

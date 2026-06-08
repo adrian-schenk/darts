@@ -5,6 +5,7 @@ import { InjectModel } from '@nestjs/mongoose/dist/common/mongoose.decorators';
 import { DartEventEntity } from '../darts_event/dart_event.entity';
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import DartsGameService from './game.service';
+import { createGameEndHandler } from './gameEndHandler';
 
 @Injectable()
 export default class GameStateFactory {
@@ -31,8 +32,15 @@ export default class GameStateFactory {
 
     gameState.providers = {
       dartEventModel: this.dartEventModel,
-      gameService: this.dartsGameService
-    }
+      gameService: this.dartsGameService,
+      gameEndHandler: createGameEndHandler(game?.mode ?? mode),
+    };
+
+    gameState.config = {
+      ...(gameState.config ?? {}),
+      mode: game?.mode ?? mode,
+      isRanked: (game?.mode ?? mode).endsWith('/ranked'),
+    };
     return gameState;
   }
 }

@@ -55,6 +55,10 @@ export class DartPlayer {
 
   state = ref<PlayerActionState>(PlayerActionState.IDLE)
 
+  gameState = ref<string | null>(null)
+
+  winnerPlayerUuid = ref<string | null>(null)
+
   stats = ref<any>(null)
 
   socket: any = null
@@ -121,6 +125,8 @@ export class DartPlayer {
     }
 
     this.state.value = playerGameState.state
+    this.gameState.value = gameState.state ?? null
+    this.winnerPlayerUuid.value = gameState.winnerPlayerUuid ?? null
     this.stats.value = playerGameState.stats
 
     if (this.currentTarget.value) {
@@ -233,5 +239,13 @@ export class DartPlayer {
 
   getCurrentTarget() {
     return this.currentTarget.value ? this.getFieldName(this.currentTarget.value) : '';
+  }
+
+  hasWonGame() {
+    return this.winnerPlayerUuid.value !== null && this.winnerPlayerUuid.value === this.uuid
+  }
+
+  isGameFinished() {
+    return this.gameState.value === 'FINISHED'
   }
 }

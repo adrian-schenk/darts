@@ -15,6 +15,7 @@ import { GameState } from './gameState';
 import PlayerStateFactory from './stateFactory';
 import { BotPlayerController } from './controllers/botPlayer.controller';
 import { randomBytes } from 'crypto';
+import { createGameEndHandler } from './gameEndHandler';
 
 @Injectable()
 export default class DartsGameService {
@@ -35,6 +36,11 @@ export default class DartsGameService {
     this.gameStates.set(gameId, state);
     if (!state) return;
     await this.redis.set(`gameState:${gameId}`, state.toRealJSON(), 'EX', 600);
+  }
+
+  async resolveGameEndHandler(gameId: string) {
+    const game = await this.gameModel.findOne({ gameId }).exec();
+    return createGameEndHandler(game?.mode ?? '');
   }
 
   async getGameState(gameId: string): Promise<GameState | null> {
@@ -97,6 +103,11 @@ export default class DartsGameService {
     let gameState: GameState =
       await this.gameStateFactory.createGameStateFromMode(config.mode, res.gameId);
     gameState.isLocal = false;
+    gameState.config = {
+      ...(gameState.config ?? {}),
+      mode: config.mode,
+      isRanked: String(config.mode).endsWith('/ranked'),
+    };
     
     for (const [user, controllerType] of users) {
       let playerState = await this.playerStateFactory.createPlayerState(user, res.gameId);
