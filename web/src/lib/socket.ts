@@ -1,6 +1,7 @@
 import { ref, onUnmounted, reactive } from 'vue'
 import { io } from 'socket.io-client'
 import { useCookies } from '@vueuse/integrations/useCookies'
+import router from '@/router'
 
 let socket: any = null
 let socketId = ref('')
@@ -42,6 +43,18 @@ export default function useSocket() {
 
     socket.on('ping', () => {
       socket.emit('pong')
+    })
+
+    socket.on('match_found', (matchData: any) => {
+      if (matchData.gameId) {
+        router.replace(`/game/${matchData.gameId}`)
+      }
+    })
+
+    socket.on('tournament_match_found', (matchData: any) => {
+      if (matchData.gameId) {
+        router.replace(`/game/${matchData.gameId}`)
+      }
     })
 
     socket.onAny((event: any, ...args: any[]) => {

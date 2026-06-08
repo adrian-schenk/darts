@@ -16,6 +16,7 @@ import PlayerStateFactory from './stateFactory';
 import { BotPlayerController } from './controllers/botPlayer.controller';
 import { randomBytes } from 'crypto';
 import { createGameEndHandler } from './gameEndHandler';
+import TournamentService from '../tournament/tournament.service';
 
 @Injectable()
 export default class DartsGameService {
@@ -30,6 +31,8 @@ export default class DartsGameService {
     private playerStateFactory: PlayerStateFactory,
     @Inject(forwardRef(() => GameStateFactory)) private gameStateFactory: GameStateFactory,
     private userService: UsersService,
+    @Inject(forwardRef(() => TournamentService))
+    private tournamentService: TournamentService,
   ) { }
 
   async setGameState(gameId: string, state: GameState) {
@@ -40,6 +43,25 @@ export default class DartsGameService {
 
   async resolveGameEndHandler(gameId: string) {
     const game = await this.gameModel.findOne({ gameId }).exec();
+
+    if (game?.tournamentUuid) {
+      return {
+        onGameFinished: async ({ gameState, winnerPlayerUuid }: { gameState: GameState; winnerPlayerUuid: string }) => {
+          const winnerUserId =
+            gameState.playerStates.get(winnerPlayerUuid)?.userId ?? null;
+          await this.tournamentService.onTournamentGameFinishedByGameId(
+            game.tournamentUuid!,
+            gameId,
+            winnerUserId,
+          );
+          await this.gameModel.updateOne(
+            { gameId },
+            { $set: { status: 'finished', updatedAt: new Date() } },
+          );
+        },
+      };
+    }
+
     return createGameEndHandler(game?.mode ?? '');
   }
 
@@ -58,7 +80,7 @@ export default class DartsGameService {
   async createTraining(user: User, mode: string) {
     let res = await this.gameModel
       .findOne({
-        owner: Number(user.id),
+        owner: String(user.id),
         mode: mode,
         isPrivate: true,
         createdAt: { $gte: new Date(Date.now() - 12 * 60 * 60 * 1000) },
@@ -69,7 +91,7 @@ export default class DartsGameService {
         playerIds: [],
         mode,
         status: 'open',
-        owner: user.id,
+        owner: String(user.id),
       });
       res = await createdGame.save();
     }
@@ -132,7 +154,7 @@ export default class DartsGameService {
 
   async userIsOwner(gameId: string, user: User): Promise<boolean> {
     const game = await this.getDartGame(gameId);
-    return game?.owner == Number(user.id);
+    return game?.owner === String(user.id);
   }
 
   async joinDartGame(socket: Socket, msg: { gameId: string }) {

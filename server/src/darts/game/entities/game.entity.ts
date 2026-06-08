@@ -5,31 +5,34 @@ import { v4 as uuidv4 } from 'uuid';
 @Schema()
 export class GameEntity extends Document {
   @Prop({ default: uuidv4, unique: true })
-  gameId: string;
+  gameId!: string;
 
   @Prop({ default: [] })
-  playerIds: string[];
+  playerIds!: string[];
 
   @Prop({ type: Object, default: {} })
-  teamPlayers: { [team: string]: string[] };
+  teamPlayers!: { [team: string]: string[] };
 
   @Prop({ default: '' })
-  mode: string;
+  mode!: string;
 
   @Prop({ default: false })
-  isPrivate: boolean;
+  isPrivate!: boolean;
 
   @Prop({ default: '' })
-  status: string;
+  status!: string;
+
+  @Prop({ type: String, default: null })
+  tournamentUuid!: string | null;
 
   @Prop({ default: Date.now })
-  createdAt: Date;
+  createdAt!: Date;
 
   @Prop({ default: Date.now })
   updatedAt?: Date;
 
-  @Prop({ default: null })
-  owner: number;
+  @Prop({ type: String, default: null })
+  owner!: string | null;
 }
 
 export const GameEntitySchema = SchemaFactory.createForClass(GameEntity);

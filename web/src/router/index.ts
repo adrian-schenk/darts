@@ -28,8 +28,22 @@ const router = createRouter({
           props: true,
         },
         { path: 'online-game', component: () => import('../views/OnlineGame.vue') },
-        { path: 'local-tournament', component: () => import('../views/Dashboard.vue') },
-        { path: 'online-tournament', component: () => import('../views/Dashboard.vue') },
+        {
+          path: 'local-tournament',
+          component: () => import('../views/TournamentHub.vue'),
+          props: { defaultFilter: 'private' },
+        },
+        {
+          path: 'online-tournament',
+          component: () => import('../views/TournamentHub.vue'),
+          props: { defaultFilter: 'public' },
+        },
+        {
+          name: 'tournament-overview',
+          path: 'tournament/:uuid',
+          component: () => import('../views/TournamentOverview.vue'),
+          props: true,
+        },
         { path: 'training', component: () => import('../views/Training.vue') },
         {
           name: 'training-session',

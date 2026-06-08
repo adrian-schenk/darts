@@ -15,6 +15,11 @@ import {
 } from './darts_event/dart_event.entity';
 import { UsersModule } from 'src/users/users.module';
 import { MatchmakingController } from './matchmaking/mm.controller';
+import {
+  TournamentEntity,
+  TournamentEntitySchema,
+} from './tournament/tournament.entity';
+import TournamentService from './tournament/tournament.service';
 
 @Module({
   imports: [
@@ -23,6 +28,7 @@ import { MatchmakingController } from './matchmaking/mm.controller';
     MongooseModule.forFeature([
       { name: GameEntity.name, schema: GameEntitySchema },
       { name: DartEventEntity.name, schema: DartEventEntitySchema },
+      { name: TournamentEntity.name, schema: TournamentEntitySchema },
     ]),
   ],
   providers: [
@@ -33,6 +39,7 @@ import { MatchmakingController } from './matchmaking/mm.controller';
     DartsCheckoutLogicService,
     PlayerStateFactory,
     GameStateFactory,
+    TournamentService,
   ],
   exports: [
     DartsService,
@@ -42,6 +49,7 @@ import { MatchmakingController } from './matchmaking/mm.controller';
     DartsCheckoutLogicService,
     PlayerStateFactory,
     GameStateFactory,
+    TournamentService,
   ],
   controllers: [
     MatchmakingController

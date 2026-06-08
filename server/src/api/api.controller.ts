@@ -30,6 +30,7 @@ import PlayerStateFactory from 'src/darts/game/stateFactory';
 import { HumanPlayerController } from 'src/darts/game/controllers/humanPlayer.controller';
 import { BotDifficulty, BotPlayerController } from 'src/darts/game/controllers/botPlayer.controller';
 import { BotUser } from 'src/users/users.service';
+import TournamentService from 'src/darts/tournament/tournament.service';
 
 
 @UseGuards(JwtAuthGuard)
@@ -43,6 +44,7 @@ export class ApiController {
     private readonly connectionsService: ConnectionsService,
     private readonly gameStateFactory: GameStateFactory,
     private readonly playerStateFactory: PlayerStateFactory,
+    private readonly tournamentService: TournamentService,
   ) {}
 
   @Get('/checkouts/:score')
@@ -170,7 +172,63 @@ export class ApiController {
       throw new HttpException('Game not found', HttpStatus.NOT_FOUND);
     }
 
-    const { teamPlayers, mode, status, createdAt, updatedAt } = game;
-    return { gameId, teamPlayers, mode, status, createdAt, updatedAt };
+    const { teamPlayers, mode, status, createdAt, updatedAt, tournamentUuid } = game;
+    return { gameId, teamPlayers, mode, status, createdAt, updatedAt, tournamentUuid };
+  }
+
+  @Get('/tournaments')
+  async listTournaments(@Req() req): Promise<any> {
+    const tournaments = await this.tournamentService.listTournaments(req.user.id);
+    return { success: true, tournaments };
+  }
+
+  @Get('/tournaments/:uuid')
+  async getTournament(@Param('uuid') uuid: string, @Req() req) {
+    const tournament = await this.tournamentService.getTournamentOverview(
+      uuid,
+      req.user.id,
+    );
+    if (!tournament) {
+      throw new HttpException('Tournament not found', HttpStatus.NOT_FOUND);
+    }
+    return { success: true, tournament };
+  }
+
+  @Post('/tournaments/private')
+  async createPrivateTournament(@Req() req, @Body() body: any) {
+    const maxPlayers = Number(body?.maxPlayers ?? 8);
+    if (maxPlayers < 2) {
+      throw new HttpException('maxPlayers must be at least 2', HttpStatus.BAD_REQUEST);
+    }
+
+    const tournament = await this.tournamentService.createTournament({
+      name: body?.name,
+      isPrivate: true,
+      ownerId: req.user.id,
+      maxPlayers,
+      mode: body?.mode ?? 'standard',
+      settings: body?.settings ?? { gameConfig: {} },
+    });
+
+    return { success: true, uuid: tournament.uuid };
+  }
+
+  @Post('/tournaments/:uuid/join')
+  async joinTournament(@Param('uuid') uuid: string, @Req() req) {
+    const res = await this.tournamentService.joinTournament(uuid, req.user);
+    if (!res.ok) {
+      throw new HttpException(res.message, HttpStatus.BAD_REQUEST);
+    }
+
+    return {
+      success: true,
+      message: res.message,
+      tournament: {
+        uuid: res.tournament?.uuid,
+        status: res.tournament?.status,
+        maxPlayers: res.tournament?.maxPlayers,
+        playerCount: res.tournament?.playerIds?.length,
+      },
+    };
   }
 }

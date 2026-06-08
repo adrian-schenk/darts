@@ -7,6 +7,7 @@ export enum PlayerActionState {
   THROW_DARTS,
   REMOVE_DARTS,
   REMOVE_DARTS_WON,
+  FINISHED
 }
 
 export interface DartPlayerInfo {

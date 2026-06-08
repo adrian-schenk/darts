@@ -116,14 +116,6 @@ let settingsSchema = [
     },
 ];
 
-socket.on('match_found', (matchData: any) => {
-  if (matchData.gameId) {
-    queued.value = false;
-    stopQueueTimer();
-    router.replace(`/game/${matchData.gameId}`)
-  }
-})
-
 const queueButtonPressed = () => {
   if (!queued.value) {
     joinQueue()

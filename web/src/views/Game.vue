@@ -19,7 +19,7 @@ import Player from '@/components/Player.vue'
 import getBearer from '@/lib/auth'
 import useSocket from '@/lib/socket'
 import router from '@/router'
-import { onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterView, routerViewLocationKey } from 'vue-router'
 import { toast } from 'vue-sonner'
 
@@ -27,6 +27,8 @@ let { socket, status, data, send, close } = useSocket()
 
 const props = defineProps<{ gameId?: string }>()
 const mode = ref('')
+const tournamentUuid = ref<string | null>(null)
+let returnTimeout: ReturnType<typeof setTimeout> | null = null
 
 const localPlayer = ref<any>(null)
 const spectating = ref<boolean>(false)
@@ -63,6 +65,7 @@ onMounted(() => {
           if (data.mode) {
             mode.value = data.mode
           }
+          tournamentUuid.value = data.tournamentUuid ?? null
         }
         
         socket.on('game-update', (gameState: any, capabilities: any) => {
@@ -94,6 +97,27 @@ onMounted(() => {
       .catch((err) => {
         console.error('Error fetching game data:', err)
       })
+  }
+})
+
+watch(
+  () => gameCapabilities.value?.finished,
+  (finished) => {
+    if (!finished || !tournamentUuid.value || returnTimeout) {
+      return
+    }
+
+    toast.success('Returning to tournament overview in 5 seconds...')
+    returnTimeout = setTimeout(() => {
+      router.replace(`/tournament/${tournamentUuid.value}`)
+    }, 5000)
+  },
+)
+
+onBeforeUnmount(() => {
+  if (returnTimeout) {
+    clearTimeout(returnTimeout)
+    returnTimeout = null
   }
 })
 

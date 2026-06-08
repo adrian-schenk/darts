@@ -127,7 +127,6 @@ export class GameState extends JsonSerializable {
 
   currentPlayer: string;
 
-  @Exclude({ toPlainOnly: true })
   state: GameStateType;
 
   winnerPlayerUuid: string | null = null;
@@ -192,7 +191,7 @@ export class GameState extends JsonSerializable {
     this.providers.gameService.broadcast(this.gameId, 'dart-event', payload);
   }
 
-  onDartHit(user: User, throwInfo: any): Boolean {
+  async onDartHit(user: User, throwInfo: any): Promise<Boolean> {
     if (
       this.currentPlayer &&
       this.playerStates.get(this.currentPlayer)?.userId === user.id &&
@@ -201,16 +200,6 @@ export class GameState extends JsonSerializable {
       this.playerStates
         .get(this.currentPlayer)
         ?.onDartHit(this.roundUuid, throwInfo);
-    }
-    return false;
-  }
-
-  async onDartRemove(user: User): Promise<Boolean> {
-    if (
-      this.currentPlayer &&
-      this.playerStates.get(this.currentPlayer)?.userId === user.id
-    ) {
-      this.playerStates.get(this.currentPlayer)?.onDartRemove();
 
       if (this.playerStates.get(this.currentPlayer)?.hasRoundEnded(this)) {
         const winnerUuid = this.currentPlayer;
@@ -225,6 +214,17 @@ export class GameState extends JsonSerializable {
           return true;
         }
       }
+
+    }
+    return false;
+  }
+
+  async onDartRemove(user: User): Promise<Boolean> {
+    if (
+      this.currentPlayer &&
+      this.playerStates.get(this.currentPlayer)?.userId === user.id
+    ) {
+      this.playerStates.get(this.currentPlayer)?.onDartRemove();
 
       this.switchTurn();
 
@@ -249,12 +249,6 @@ export class GameState extends JsonSerializable {
         ps.onRoundEnd(this);
       });
       this.nextRound();
-
-      if (await this.tryFinishGame(winnerUuid)) {
-        await this.providers.gameService.setGameState(this.gameId, this);
-        this.providers.gameService.broadcast(this.gameId, 'player-event', this);
-        return;
-      }
     }
 
     this.switchTurn();

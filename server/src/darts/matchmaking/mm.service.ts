@@ -31,7 +31,7 @@ export default class MatchmakingService {
             this.leaveQueue(user.user);
             let { gameId } = await this.gameService.createMultiPlayerGame([[user.user, 'human'], [BotUser, 'bot']], { mode });
 
-            this.connectionsService.broadcast([user.socketId], 'match_found', { gameId });
+            this.connectionsService.broadcastToUsers([user.user.id.toString()], 'match_found', { gameId });
           }
         }
       }
@@ -45,7 +45,7 @@ export default class MatchmakingService {
 
         let { gameId } = await this.gameService.createMultiPlayerGame([[user1.user, 'human'], [user2.user, 'human']], { mode });
 
-        this.connectionsService.broadcast([user1.socketId, user2.socketId], 'match_found', { gameId });
+        this.connectionsService.broadcastToUsers([user1.user.id.toString(), user2.user.id.toString()], 'match_found', { gameId });
       }
     }
   }
