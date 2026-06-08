@@ -12,6 +12,20 @@ Repository for a full-stack darts app with a Vue 3 frontend and a NestJS backend
 - Stats: match and player performance tracking.
 - Intuitive user interface
 
+## Screenshots
+
+### Player interface
+
+![Player interface](screenshots/player_interface.png)
+
+### Private game creation
+
+![Private game creation](screenshots/private_game_creation.png)
+
+### Play against bots
+
+![Play against bots](screenshots/play_against_bots.png)
+
 ## WIP
 
 - Complete game logic
