@@ -57,9 +57,14 @@ export class DartsCheckoutLogicService {
     const remainingScore = score - throwScore;
     if (remainingScore < 0) return false;
     if (remainingScore === 0) {
-      const dart = this.validScores.find(d => d.value * d.multiplier === throwScore);
-      if (!dart) return false;
-      return this.isValidFinishingDart(dart, checkoutMode);
+      const darts = this.validScores.filter(d => d.value * d.multiplier === throwScore);
+      if (!darts || darts.length === 0) return false;
+      for (const dart of darts) {
+        if (this.isValidFinishingDart(dart, checkoutMode)) {
+          return true;
+        }
+      }
+      return false;
     }
     return true;
   }
