@@ -1,6 +1,5 @@
 <template>
   <div
-    v-if="playerInterface && playerInterface.state !== PlayerActionState.IDLE"
     class="dartboard-wrapper relative overflow-hidden"
   >
     <div class="dartboard-container content-center">
@@ -156,17 +155,6 @@
         <div class="score-main">{{ getSegmentInfo(activeSegment).score }}</div>
       </div>
     </div>
-    <div
-      v-if="(playerInterface?.state == PlayerActionState.REMOVE_DARTS || playerInterface?.state == PlayerActionState.REMOVE_DARTS_WON) && props.clickToAddMarker"
-      class="absolute bg-slate-700/80 w-full h-full flex flex-col items-center justify-center top-0 left-0"
-    >
-      <button
-        @click="playerInterface && playerInterface.endTurn()"
-        class="text-2xl cursor-pointer border-2 rounded-full px-3 py-1 border-yellow-600 text-white font-bold hover:bg-yellow-600"
-      >
-        Removed darts
-      </button>
-    </div>
   </div>
 </template>
 
@@ -184,25 +172,22 @@ let props = defineProps({
   uuid: { type: String, default: '' },
 })
 
+const playerUuid = ref(props.uuid);
 const playerInterface = ref(props.playerInterface)
 const svgRef = ref<SVGSVGElement | null>(null)
 const markers = ref<{ x: number; y: number; id: string }[]>([])
 const activeSegment = ref<string | null>(null)
 const highlightedSegment = ref<string | null>('single-20')
 
+watch(() => props.uuid, (newVal) => {
+  playerUuid.value = newVal;
+  playerInterface.value.uuid = newVal;
+})
+
 onMounted(() => {
   // For local games, theres only one dartboard, so create a "dummy" Dartplayer that listens to all events
   if (!playerInterface.value) {
-    playerInterface.value = new DartPlayer({ uuid: props.uuid, name: '' })
-    socket.on('player-event', (msg: any) => {
-      for (const playerState of msg.playerStates ? Object.values(msg.playerStates) : [msg]) {
-        if (playerState.state == PlayerActionState.REMOVE_DARTS || playerState.state == PlayerActionState.REMOVE_DARTS_WON) {
-          playerInterface.value!.state = PlayerActionState.REMOVE_DARTS
-          return
-        }
-      }
-      playerInterface.value!.state = PlayerActionState.THROW_DARTS
-    })
+    playerInterface.value = new DartPlayer({ uuid: playerUuid.value, name: '' })
   }
 })
 

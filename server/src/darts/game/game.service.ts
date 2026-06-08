@@ -233,4 +233,21 @@ export default class DartsGameService {
       clients.emit(event, data);
     }
   }
+
+  async broadcastToOthers(gameId: string, event: string, data: any, user: User) {
+    // Broadcast data to joined clients and spectators except the user
+    const excludedUserId = String(user.id);
+
+    for (const client of this.joinedClients.get(gameId) || []) {
+      if (client.data.userId == excludedUserId)
+        continue;
+      client.emit(event, data);
+    }
+
+    for (const client of this.spectatingClients.get(gameId) || []) {
+      if (client.data.userId == excludedUserId)
+        continue;
+      client.emit(event, data);
+    }
+  }
 }

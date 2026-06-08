@@ -21,6 +21,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { BotPlayerController } from './controllers/botPlayer.controller';
 import { HumanPlayerController } from './controllers/humanPlayer.controller';
 import { DartsCheckoutLogicService } from '../logic/checkout.service';
+import DartsGameService from './game.service';
 
 const checkoutLogic: DartsCheckoutLogicService =
   new DartsCheckoutLogicService();
@@ -29,7 +30,6 @@ enum GameStateType {
   PLAYING = 'PLAYING',
   BULLING_OFF = 'BULLING_OFF',
   SCORECORRECTION = 'SCORECORRECTION',
-  TIMEOUT = 'TIMEOUT',
   OPPONENT_LEFT = 'OPPONENT_LEFT',
   RESIGNED = 'RESIGNED',
   FINISHED = 'FINISHED',
@@ -124,7 +124,6 @@ export class GameState extends JsonSerializable {
   @Exclude({ toPlainOnly: true })
   controllers: Map<string, PlayerController> = new Map();
 
-  @Exclude({ toPlainOnly: true })
   currentPlayer: string;
 
   @Exclude({ toPlainOnly: true })
@@ -152,6 +151,9 @@ export class GameState extends JsonSerializable {
   }
 
   async trigger(event: string, user: User, payload: any) {
+    if (!this.isCurrentPlayer(user)) {
+      return;
+    }
     switch (event) {
       case 'dart_hit':
         this.onDartHit(user, payload.throw);
@@ -242,7 +244,30 @@ export class GameState extends JsonSerializable {
   protected onPreRoundEnd() {}
   public newRoundTarget(): any {}
 
+  getCurrentPlayerId(): string | null {
+    return this.currentPlayer || null;
+  }
+
+  getCurrentPlayer(): PlayerState | null {
+    if (!this.currentPlayer) {
+      return null;
+    }
+    return this.playerStates.get(this.currentPlayer) || null;
+  }
+
+  isCurrentPlayer(user: User): boolean {
+    return (
+      this.currentPlayer !== undefined &&
+      this.playerStates.get(this.currentPlayer)?.userId === user.id
+    );
+  }
+
   switchTurn() {
+
+    if (this.playerStates.size <= 1) {
+      this.setTurn(this.currentPlayer);
+    }
+
     const previousPlayer = this.currentPlayer;
     for (const uuid of this.playerStates.keys()) {
       if (uuid !== previousPlayer) {

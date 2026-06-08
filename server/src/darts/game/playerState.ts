@@ -23,8 +23,6 @@ export enum PlayerActionState {
   THROW_DARTS,
   REMOVE_DARTS,
   REMOVE_DARTS_WON,
-  REQUEST_TIMEOUT,
-  TIMEOUT,
 }
 
 enum PracticeDifficulty {
@@ -120,31 +118,39 @@ export class PlayerState extends JsonSerializable {
 
   public setTurn(gamestate: GameState) {
     this.state = PlayerActionState.THROW_DARTS;
-    clearInterval(this.remainingTimeIntervalId!);
+    if (!gamestate.isLocal) {
+      clearInterval(this.remainingTimeIntervalId!);
+      this.remainingTime = 30;
+      const remainingTimeIntervalId = setInterval(() => {
+        if (this.remainingTime !== null && this.state === PlayerActionState.THROW_DARTS) {
+          this.remainingTime = Math.max(0, this.remainingTime - 1);
+        }
+        if (this.remainingTime == 0) {
+          clearInterval(remainingTimeIntervalId);
+          if (this.remainingTimeIntervalId === remainingTimeIntervalId) {
+            this.remainingTimeIntervalId = null;
+          }
+          gamestate.onTimeGone();
+        }
+      }, 1000);
+      this.remainingTimeIntervalId = remainingTimeIntervalId;
+    }
+    
     clearInterval(this.removeDartsRemainingTimeIntervalId!);
     this.removeDartsRemainingTime = 5;
-    this.remainingTime = 30;
-    this.remainingTimeIntervalId = setInterval(() => {
-      if (this.remainingTime !== null && this.state === PlayerActionState.THROW_DARTS) {
-        this.remainingTime = Math.max(0, this.remainingTime - 1);
-      }
-      if (this.remainingTime == 0) {
-        gamestate.onTimeGone();
-        clearInterval(this.remainingTimeIntervalId!);
-        this.remainingTimeIntervalId = null;
-      }
-    }, 1000);
-
-    this.removeDartsRemainingTimeIntervalId = setInterval(() => {
-      if (this.removeDartsRemainingTime !== null && this.state === PlayerActionState.REMOVE_DARTS) {
+    const removeDartsIntervalId = setInterval(() => {
+      if (this.removeDartsRemainingTime !== null && (this.state === PlayerActionState.REMOVE_DARTS || this.state === PlayerActionState.REMOVE_DARTS_WON)) {
         this.removeDartsRemainingTime = Math.max(0, this.removeDartsRemainingTime - 1);
       }
       if (this.removeDartsRemainingTime == 0) {
+        clearInterval(removeDartsIntervalId);
+        if (this.removeDartsRemainingTimeIntervalId === removeDartsIntervalId) {
+          this.removeDartsRemainingTimeIntervalId = null;
+        }
         gamestate.onTimeGone();
-        clearInterval(this.removeDartsRemainingTimeIntervalId!);
-        this.removeDartsRemainingTimeIntervalId = null;
       }
     }, 1000);
+    this.removeDartsRemainingTimeIntervalId = removeDartsIntervalId;
   }
 
   public setShowPlayerStat(stat: string, value: boolean) {

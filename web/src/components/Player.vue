@@ -5,13 +5,6 @@
   >
     <slot />
     <div v-if="props.capabilities.showPlayerTime && PlayerInterface.state.value === PlayerActionState.THROW_DARTS" class="absolute top-3 right-3 flex items-center gap-2">
-      <button
-        v-if="PlayerInterface.state.value == PlayerActionState.THROW_DARTS && props.capabilities.timeoutPossible && props.isOwnPlayer"
-        class="rounded-full border border-slate-500/40 bg-slate-800/80 p-2 text-slate-200 transition hover:bg-slate-700/90 hover:text-white cursor-pointer"
-        @click="PlayerInterface.requestTimeout()"
-      >
-        <pause-circle class="h-5 w-5"></pause-circle>
-      </button>
       <div class="flex items-center gap-2 rounded-full border border-slate-500/50 bg-slate-900/70 px-3 py-1.5 backdrop-blur-sm shadow-md">
         <div
           :class="[
@@ -134,10 +127,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, watch } from 'vue'
 import { DartPlayer, PlayerActionState } from '@/lib/dartPlayer.ts'
 import type { Throw } from '@/lib/dart'
 import { PauseCircle } from 'lucide-vue-next'
+import useSocket from '@/lib/socket'
+
+const { socket } = useSocket();
 
 const props = defineProps({
   player: { type: Object, required: true },

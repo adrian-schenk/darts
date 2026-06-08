@@ -7,8 +7,6 @@ export enum PlayerActionState {
   THROW_DARTS,
   REMOVE_DARTS,
   REMOVE_DARTS_WON,
-  REQUEST_TIMEOUT,
-  TIMEOUT,
 }
 
 export interface DartPlayerInfo {
@@ -67,7 +65,7 @@ export class DartPlayer {
 
   constructor(public info: DartPlayerInfo) {
     this.uuid = info.uuid
-
+    
     const { socket } = useSocket()
     this.socket = socket
 
@@ -94,7 +92,8 @@ export class DartPlayer {
   }
 
   private readonly handlePlayerEvent = (gameState: any) => {
-    if (!this.uuid) return
+    if (!this.uuid)
+        this.uuid = gameState.currentPlayer ?? null;
 
     const playerGameState = gameState.playerStates?.[this.uuid] ?? gameState
     const board = this.getBoard()
@@ -180,10 +179,6 @@ export class DartPlayer {
 
   endTurn() {
     this.socket.emit('dart-event', { type: 'dart_remove' })
-  }
-
-  requestTimeout() {
-    this.socket.emit('player-event', { type: 'request_timeout' })
   }
 
   getFieldName = (id: string) => {
