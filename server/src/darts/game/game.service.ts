@@ -1,7 +1,7 @@
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { plainToInstance } from 'class-transformer';
+import { instanceToPlain, plainToInstance } from 'class-transformer';
 import Redis from 'ioredis/built/Redis';
 import { Model } from 'mongoose';
 import { Socket } from 'socket.io';
@@ -17,6 +17,7 @@ import { BotPlayerController } from './controllers/botPlayer.controller';
 import { randomBytes } from 'crypto';
 import { createGameEndHandler } from './gameEndHandler';
 import TournamentService from '../tournament/tournament.service';
+import PlayerState from './playerState';
 
 @Injectable()
 export default class DartsGameService {
@@ -130,7 +131,7 @@ export default class DartsGameService {
       mode: config.mode,
       isRanked: String(config.mode).endsWith('/ranked'),
     };
-    
+
     for (const [user, controllerType] of users) {
       let playerState = await this.playerStateFactory.createPlayerState(user, res.gameId);
 
@@ -141,7 +142,7 @@ export default class DartsGameService {
       gameState.addPlayer(user, playerState, controllerType != 'bot' ? new HumanPlayerController() : new BotPlayerController());
     }
 
-    gameState.setRandomTurn();
+    gameState.startBullingOff();
 
     await this.setGameState(res.gameId, gameState);
 
@@ -177,7 +178,7 @@ export default class DartsGameService {
 
       let uuid: string | null | undefined = null;
       if (!gameState?.isLocal)
-          uuid = gameState?.getPlayerUuid(socket.data.user);
+        uuid = gameState?.getPlayerUuid(socket.data.user);
 
       socket.emit('join-game', { success: true, playerId: uuid });
     } else {
@@ -194,8 +195,8 @@ export default class DartsGameService {
       });
     }
     this.setGameState(gameId, gameState!);
-    socket.emit('game-update', await this.getGameUpdateData(gameId, socket.data.user), await this.getGameCapabilities(gameId));
-    socket.emit('player-event', gameState);
+    socket.emit('game-joined', await this.getGameUpdateData(gameId, socket.data.user), await this.getGameCapabilities(gameId), gameState?.state);
+    socket.emit('player-event', gameState?.currentPlayer, gameState?.getPlayerStatesJSON());
   }
 
   async leaveDartGame(gameId: string, client: Socket) {
@@ -257,30 +258,30 @@ export default class DartsGameService {
     return true;
   }
 
-  async broadcast(gameId: string, event: string, data: any) {
+  async broadcast(gameId: string, event: string, ...data: any) {
     // Broadcast data to joined clients and spectators
     for (const clients of this.joinedClients.get(gameId) || []) {
-      clients.emit(event, data);
+      clients.emit(event, ...data);
     }
     for (const clients of this.spectatingClients.get(gameId) || []) {
-      clients.emit(event, data);
+      clients.emit(event, ...data);
     }
   }
 
-  async broadcastToOthers(gameId: string, event: string, data: any, user: User) {
+  async broadcastToOthers(gameId: string, user: User, event: string, ...data: any) {
     // Broadcast data to joined clients and spectators except the user
     const excludedUserId = String(user.id);
 
     for (const client of this.joinedClients.get(gameId) || []) {
       if (client.data.userId == excludedUserId)
         continue;
-      client.emit(event, data);
+      client.emit(event, ...data);
     }
 
     for (const client of this.spectatingClients.get(gameId) || []) {
       if (client.data.userId == excludedUserId)
         continue;
-      client.emit(event, data);
+      client.emit(event, ...data);
     }
   }
 }

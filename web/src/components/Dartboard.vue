@@ -5,7 +5,7 @@
     <div class="dartboard-container content-center">
       <svg ref="svgRef" viewBox="0 0 500 500" class="dartboard-svg" @click="handleBoardClick">
         <defs>
-          <filter id="sisalTexture" x="0%" y="0%" width="100%" height="100%">
+          <filter :id="svgIds.sisalTexture" x="0%" y="0%" width="100%" height="100%">
             <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" result="noise" />
             <feColorMatrix type="saturate" values="0" />
             <feComponentTransfer>
@@ -15,19 +15,19 @@
             <feBlend mode="multiply" in="composite" in2="SourceGraphic" />
           </filter>
 
-          <radialGradient id="grad-red" cx="50%" cy="50%" r="50%">
+          <radialGradient :id="svgIds.gradRed" cx="50%" cy="50%" r="50%">
             <stop offset="30%" stop-color="#E63946" />
             <stop offset="100%" stop-color="#9e1b25" />
           </radialGradient>
-          <radialGradient id="grad-green" cx="50%" cy="50%" r="50%">
+          <radialGradient :id="svgIds.gradGreen" cx="50%" cy="50%" r="50%">
             <stop offset="30%" stop-color="#4CAF50" />
             <stop offset="100%" stop-color="#1b5e20" />
           </radialGradient>
-          <radialGradient id="grad-black" cx="50%" cy="50%" r="50%">
+          <radialGradient :id="svgIds.gradBlack" cx="50%" cy="50%" r="50%">
             <stop offset="30%" stop-color="#333" />
             <stop offset="100%" stop-color="#050505" />
           </radialGradient>
-          <radialGradient id="grad-cream" cx="50%" cy="50%" r="50%">
+          <radialGradient :id="svgIds.gradCream" cx="50%" cy="50%" r="50%">
             <stop offset="30%" stop-color="#f0e6d2" />
             <stop offset="100%" stop-color="#c5b392" />
           </radialGradient>
@@ -35,7 +35,7 @@
 
         <circle cx="250" cy="250" r="225" fill="#111" stroke="#222" stroke-width="2" />
 
-        <g filter="url(#sisalTexture)" transform="translate(250, 250)">
+        <g :filter="`url(#${svgIds.sisalTexture})`" transform="translate(250, 250)">
           <path
             v-for="(segment, index) in segments"
             :key="`so-${index}`"
@@ -84,7 +84,7 @@
             cx="0"
             cy="0"
             :r="OUTER_BULL_R"
-            fill="url(#grad-green)"
+            :fill="`url(#${svgIds.gradGreen})`"
             :class="'segment ' + (highlightedSegment === 'outer-bull' ? 'segment_highlight' : '')"
             @mouseenter="activeSegment = 'outer-bull'"
             @mouseleave="activeSegment = null"
@@ -93,14 +93,14 @@
             cx="0"
             cy="0"
             :r="INNER_BULL_R"
-            fill="url(#grad-red)"
+            :fill="`url(#${svgIds.gradRed})`"
             :class="'segment ' + (highlightedSegment === 'bullseye' ? 'segment_highlight' : '')"
             @mouseenter="activeSegment = 'bullseye'"
             @mouseleave="activeSegment = null"
           />
         </g>
 
-        <g transform="translate(250, 250)" filter="url(#wireShadow)" pointer-events="none">
+        <g transform="translate(250, 250)" pointer-events="none">
           <path
             v-for="(segment, index) in segments"
             :key="`w-${index}`"
@@ -161,7 +161,7 @@
 <script setup lang="ts">
 import { DartPlayer, PlayerActionState } from '@/lib/dartPlayer'
 import useSocket from '@/lib/socket'
-import { onMounted, ref, watch } from 'vue'
+import { getCurrentInstance, onMounted, ref, watch } from 'vue'
 
 let { socket, status, data, send, close } = useSocket()
 
@@ -178,6 +178,15 @@ const svgRef = ref<SVGSVGElement | null>(null)
 const markers = ref<{ x: number; y: number; id: string }[]>([])
 const activeSegment = ref<string | null>(null)
 const highlightedSegment = ref<string | null>('single-20')
+
+const instanceId = String(getCurrentInstance()?.uid ?? Math.random().toString(36).slice(2))
+const svgIds = {
+  sisalTexture: `sisalTexture-${instanceId}`,
+  gradRed: `grad-red-${instanceId}`,
+  gradGreen: `grad-green-${instanceId}`,
+  gradBlack: `grad-black-${instanceId}`,
+  gradCream: `grad-cream-${instanceId}`,
+}
 
 watch(() => props.uuid, (newVal) => {
   playerUuid.value = newVal;
@@ -271,8 +280,10 @@ const getRadialWire = (i: number) => {
   return `M ${OUTER_BULL_R * Math.cos(a)} ${OUTER_BULL_R * Math.sin(a)} L ${DOUBLE_OUTER_R * Math.cos(a)} ${DOUBLE_OUTER_R * Math.sin(a)}`
 }
 
-const getSegmentFill = (i: number) => (i % 2 === 0 ? 'url(#grad-black)' : 'url(#grad-cream)')
-const getDoubleFill = (i: number) => (i % 2 === 0 ? 'url(#grad-red)' : 'url(#grad-green)')
+const getSegmentFill = (i: number) =>
+  i % 2 === 0 ? `url(#${svgIds.gradBlack})` : `url(#${svgIds.gradCream})`
+const getDoubleFill = (i: number) =>
+  i % 2 === 0 ? `url(#${svgIds.gradRed})` : `url(#${svgIds.gradGreen})`
 
 const getSegmentInfo = (s: string) => {
   if (s === 'miss') return { name: 'MISS', score: 0 }

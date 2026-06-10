@@ -490,7 +490,7 @@ export default class TournamentService implements OnModuleInit {
       },
     };
 
-    gameState.setRandomTurn();
+    //gameState.setRandomTurn();
     await this.dartsGameService.setGameState(game.gameId, gameState);
 
     this.connectionsService.broadcastToUsers(

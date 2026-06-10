@@ -161,6 +161,30 @@ export class BotPlayerController implements PlayerController {
 
   constructor(public difficulty: BotDifficulty = BotDifficulty.auto) { }
 
+  async planBullingOffTurn(_gameState: GameState) {
+    await new Promise<void>((resolve) => {
+      setTimeout(() => {
+        const angle = Math.random() * 2 * Math.PI;
+        const radius = Math.random() * 18;
+        const x = parseFloat((Math.cos(angle) * radius).toFixed(2));
+        const y = parseFloat((Math.sin(angle) * radius).toFixed(2));
+        const field = radius <= 6.35 ? 'bullseye' : 'outer-bull';
+        _gameState.trigger('dart_hit', BotUser, {
+          type: 'dart_hit',
+          throw: { field, x, y },
+        });
+        resolve();
+      }, 800);
+    });
+
+    await new Promise<void>((resolve) => {
+      setTimeout(() => {
+        _gameState.trigger('dart_remove', BotUser, {});
+        resolve();
+      }, 600);
+    });
+  }
+
   async planTurn(_gameState: GameState) {
     setTimeout(async () => {
       for (let i = 0; i < 3; i++) {

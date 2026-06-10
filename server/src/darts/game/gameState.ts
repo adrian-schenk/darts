@@ -125,7 +125,7 @@ export class GameState extends JsonSerializable {
   @Exclude({ toPlainOnly: true })
   controllers: Map<string, PlayerController> = new Map();
 
-  currentPlayer: string;
+  currentPlayer: string = '';
 
   state: GameStateType;
 
@@ -144,13 +144,111 @@ export class GameState extends JsonSerializable {
   constructor() {
     super();
     this.roundUuid = uuidv4();
-    this.state = GameStateType.PLAYING;
+    this.state = GameStateType.BULLING_OFF;
   }
 
   static create(gameId: string) {
     let gameState = new GameState();
     gameState.gameId = gameId;
+    gameState.state = GameStateType.BULLING_OFF;
     return gameState;
+  }
+
+  startBullingOff() {
+    if (this.playerStates.size <= 1) {
+      this.state = GameStateType.PLAYING;
+      const [firstUuid] = this.playerStates.keys();
+      if (firstUuid) this.setTurn(firstUuid);
+      return;
+    }
+
+    const playerUuids = Array.from(this.playerStates.keys());
+    const firstUuid = playerUuids[Math.floor(Math.random() * playerUuids.length)]!;
+    this.setBullingOffTurn(firstUuid);
+  }
+
+  private setBullingOffTurn(playerUuid: string) {
+    this.switchTurn();
+  }
+
+  private async handleBullingOffEvent(event: string, user: User, payload: any) {
+    const currentPlayerState = this.playerStates.get(this.currentPlayer);
+    if (!currentPlayerState) return;
+
+    if (event === 'dart_hit') {
+      if (currentPlayerState.bullingOffThrow !== null) return;
+
+      const throwInfo = payload.throw;
+      currentPlayerState.bullingOffThrow = {
+        field: throwInfo.field,
+        x: throwInfo.x,
+        y: throwInfo.y,
+      };
+      currentPlayerState.state = PlayerActionState.REMOVE_DARTS;
+
+    } else if (event === 'dart_remove') {
+      const allUuids = Array.from(this.playerStates.keys());
+      const nextUuid = allUuids.find(
+        (uuid) => uuid !== this.currentPlayer && this.playerStates.get(uuid)?.bullingOffThrow === null,
+      );
+
+      if (nextUuid) {
+        this.setBullingOffTurn(nextUuid);
+      } else {
+        this.evaluateBullingOff();
+      }
+    }
+
+    this.providers.dartEventModel.create({
+      gameId: this.gameId,
+      playerUuid: payload.playerUuid ?? 'bot',
+      user: user.id,
+      type: event,
+      payload: { ...payload, bullingOff: true },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+
+    payload.playerUuid = this.currentPlayer;
+    await this.providers.gameService.setGameState(this.gameId, this);
+    this.providers.gameService.broadcast(this.gameId, 'game-event', this.state);
+    this.providers.gameService.broadcast(this.gameId, 'dart-event', payload);
+    this.providers.gameService.broadcast(this.gameId, 'player-event', this.currentPlayer, this.getPlayerStatesJSON());
+  }
+
+  private evaluateBullingOff() {
+
+    if (this.state !== GameStateType.BULLING_OFF) {
+      return;
+    }
+
+    const distances = new Map<string, number>();
+    for (const [uuid, ps] of this.playerStates) {
+      if (ps.bullingOffThrow) {
+        const { x, y } = ps.bullingOffThrow;
+        distances.set(uuid, Math.sqrt(x * x + y * y));
+      }
+    }
+
+    const minDist = Math.min(...distances.values());
+    const winners = Array.from(distances.entries())
+      .filter(([, dist]) => Math.abs(dist - minDist) < 0.5)
+      .map(([uuid]) => uuid);
+
+    for (const [, ps] of this.playerStates) {
+      ps.bullingOffThrow = null;
+      ps.state = PlayerActionState.IDLE;
+    }
+
+    if (winners.length > 1) {
+      const firstUuid = winners[Math.floor(Math.random() * winners.length)]!;
+      this.setBullingOffTurn(firstUuid);
+    } else {
+      const winnerUuid = winners[0]!;
+      this.state = GameStateType.PLAYING;
+      this.setTurn(winnerUuid);
+    }
   }
 
   async trigger(event: string, user: User, payload: any) {
@@ -161,6 +259,12 @@ export class GameState extends JsonSerializable {
     if (!this.isCurrentPlayer(user)) {
       return;
     }
+
+    if (this.state === GameStateType.BULLING_OFF) {
+      await this.handleBullingOffEvent(event, user, payload);
+      return;
+    }
+
     switch (event) {
       case 'dart_hit':
         this.onDartHit(user, payload.throw);
@@ -187,8 +291,10 @@ export class GameState extends JsonSerializable {
     // Update game state in memory and Redis
     await this.providers.gameService.setGameState(this.gameId, this);
 
-    this.providers.gameService.broadcast(this.gameId, 'player-event', this);
+
+    this.providers.gameService.broadcast(this.gameId, 'game-event', this.state);
     this.providers.gameService.broadcast(this.gameId, 'dart-event', payload);
+    this.providers.gameService.broadcast(this.gameId, 'player-event', this.currentPlayer, this.getPlayerStatesJSON());
   }
 
   async onDartHit(user: User, throwInfo: any): Promise<Boolean> {
@@ -251,16 +357,13 @@ export class GameState extends JsonSerializable {
       this.nextRound();
     }
 
-    this.switchTurn();
-
     await this.providers.gameService.setGameState(this.gameId, this);
 
-    this.providers.gameService.broadcast(this.gameId, 'dart-event', { type: 'dart_remove' });
-    this.providers.gameService.broadcast(this.gameId, 'player-event', this);
+    this.trigger('dart_remove', { id: this.playerStates.get(this.currentPlayer)?.userId } as User, { type: 'dart_remove' });
   }
 
-  protected onPreRoundEnd() {}
-  public newRoundTarget(): any {}
+  protected onPreRoundEnd() { }
+  public newRoundTarget(): any { }
 
   getCurrentPlayerId(): string | null {
     return this.currentPlayer || null;
@@ -345,9 +448,9 @@ export class GameState extends JsonSerializable {
         playerState.wonPlayerActionState = PlayerActionState.REMOVE_DARTS;
         playerState.onRoundEnd(this);
 
-        if (!this.currentPlayer) {
-          this.setTurn(playerState.uuid);
-        }
+        //if (!this.currentPlayer) {
+        //  this.setTurn(playerState.uuid);
+        //}
 
         if (this.playerStates.size >= 2) {
           this.isMultiplayer = true;
@@ -383,6 +486,21 @@ export class GameState extends JsonSerializable {
     return this.playerStates;
   }
 
+  getPlayerStatesJSON() {
+    return Object.fromEntries(
+      Array.from((this.playerStates as Map<string, PlayerState>).entries()).map(
+        ([uuid, playerState]) => [
+          uuid,
+          {
+            __type: playerState.constructor.name,
+            ...instanceToPlain(playerState, {
+            }),
+          },
+        ],
+      ),
+    );
+  }
+
   getGameUpdateData() {
     return Object.fromEntries(
       Array.from(this.playerStates.entries()).map(([uuid, playerState]) => [
@@ -399,7 +517,7 @@ export class GameState extends JsonSerializable {
   getCapabilities() {
     const capabilities: any = {};
 
-    capabilities.showStats = this.playerStates.get(this.currentPlayer)?.showStats || false;
+    capabilities.showStats = Array.from(this.playerStates.values())[0]?.showStats;
 
     capabilities.showPlayerTime = !this.isLocal;
 

@@ -20,11 +20,11 @@
         </div>
       </div>
     </div>
-    <div v-if="props.capabilities.showStats.player.showName" class="text-4xl text-white font-bold my-4">
+    <div v-if="props.capabilities?.showStats?.player?.showName ?? false" class="text-4xl text-white font-bold my-4">
       {{ props.player.playerName }}
     </div>
     <div
-      v-if="props.capabilities.showStats.player.showSets"
+      v-if="props.capabilities?.showStats?.player?.showSets ?? false"
       class="flex justify-center items-center mt-4 text-gray-400"
     >
       <div class="m-4">{{ PlayerInterface.getPlayerStat('sets') }} sets</div>
@@ -185,7 +185,7 @@ const remainingTimeDotClass = computed(() => {
 })
 
 const visibleStatsEntries = computed(() =>
-  Object.entries(props.capabilities.showStats.data ?? {}).filter(([, isVisible]) => isVisible),
+  Object.entries(props.capabilities?.showStats?.data ?? {}).filter(([, isVisible]) => isVisible),
 )
 
 watch(

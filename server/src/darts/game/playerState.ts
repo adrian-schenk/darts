@@ -81,6 +81,8 @@ export class PlayerState extends JsonSerializable {
 
   removeDartsRemainingTime: number | null = null;
 
+  bullingOffThrow: { field: string; x: number; y: number } | null = null;
+
   @Exclude()
   @Transform(() => null)
   remainingTimeIntervalId: any = null;

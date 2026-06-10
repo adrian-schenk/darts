@@ -13,4 +13,6 @@ export interface PlayerController {
   readonly type: PlayerControllerType;
 
   planTurn(gameState: GameState): Promise<void>;
+
+  planBullingOffTurn?(gameState: GameState): Promise<void>;
 }

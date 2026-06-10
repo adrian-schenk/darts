@@ -1,6 +1,13 @@
 <template>
   <div v-if="props.gameId" class="w-full mx-auto">
-    <div class="flex flex-col gap-4 w-full h-full flex-auto">
+    <BullingOff
+      v-show="currentGameState === 'BULLING_OFF'"
+      :players="players"
+      :player-states="bullingOffPlayerStates"
+      :current-player="bullingOffCurrentPlayer"
+      :local-player="localPlayer"
+    />
+    <div v-show="currentGameState !== 'BULLING_OFF'" class="flex flex-col gap-4 w-full h-full flex-auto">
       <div class="flex flex-row gap-4">
         <Player v-for="[playeruuid, player] of players" :key="playeruuid" class="flex-auto h-auto w-full"
           :player="player" :capabilities="gameCapabilities" :ref="getPlayerRefSetter(playeruuid)" :show-history="true"
@@ -14,6 +21,7 @@
 </template>
 
 <script setup lang="ts">
+import BullingOff from '@/components/BullingOff.vue'
 import Dartboard from '@/components/Dartboard.vue'
 import Player from '@/components/Player.vue'
 import getBearer from '@/lib/auth'
@@ -33,10 +41,14 @@ let returnTimeout: ReturnType<typeof setTimeout> | null = null
 const localPlayer = ref<any>(null)
 const spectating = ref<boolean>(false)
 const gameCapabilities = ref<any>(null)
+const currentGameState = ref<any>(null)
 const players = ref<Map<string, any>>(new Map())
 const playerRefs = ref<Map<string, InstanceType<typeof Player> | null>>(new Map())
 const dartboardRef = ref<InstanceType<typeof Dartboard> | null>(null)
 const playerRefSetters = new Map<string, (el: unknown) => void>()
+
+const bullingOffCurrentPlayer = ref<string>('')
+const bullingOffPlayerStates = ref<Record<string, any>>({})
 
 const setPlayerRef = (playerUuid: string, el: unknown) => {
   const nextRef = (el as InstanceType<typeof Player>) ?? null
@@ -68,11 +80,31 @@ onMounted(() => {
           tournamentUuid.value = data.tournamentUuid ?? null
         }
         
-        socket.on('game-update', (gameState: any, capabilities: any) => {
-          for (const [uuid, player] of Object.entries(gameState)) {
-            players.value.set(uuid, player)
+        socket.on('game-joined', (playerUpdates: any, capabilities: any, state: any) => {
+          const nextPlayers = new Map<string, any>()
+
+          for (const [uuid, player] of Object.entries(playerUpdates ?? {})) {
+            if (!player || typeof player !== 'object') {
+              continue
+            }
+
+            nextPlayers.set(uuid, player)
           }
+
+          players.value = nextPlayers
           gameCapabilities.value = capabilities
+          currentGameState.value = state
+
+          console.log(players.value)
+        })
+
+        socket.on('game-event', (state: any) => {
+          currentGameState.value = state
+        })
+
+        socket.on('player-event', (currentPlayer: string, playerStates: any) => {
+          bullingOffCurrentPlayer.value = currentPlayer
+          bullingOffPlayerStates.value = playerStates
         })
 
         await send('join-game', { gameId: props.gameId })

@@ -96,11 +96,11 @@ export class DartPlayer {
     }
   }
 
-  private readonly handlePlayerEvent = (gameState: any) => {
+  private readonly handlePlayerEvent = (currentPlayer: string, playerStates: any) => {
     if (!this.uuid)
-        this.uuid = gameState.currentPlayer ?? null;
+        this.uuid = currentPlayer ?? Object.keys(playerStates)[0] ?? null
 
-    const playerGameState = gameState.playerStates?.[this.uuid] ?? gameState
+    const playerGameState = playerStates[this.uuid] ?? playerStates
     const board = this.getBoard()
     if (
       (this.state.value == PlayerActionState.REMOVE_DARTS || this.state.value == PlayerActionState.REMOVE_DARTS_WON) &&
@@ -126,8 +126,8 @@ export class DartPlayer {
     }
 
     this.state.value = playerGameState.state
-    this.gameState.value = gameState.state ?? null
-    this.winnerPlayerUuid.value = gameState.winnerPlayerUuid ?? null
+    this.gameState.value = playerStates.state ?? null
+    this.winnerPlayerUuid.value = playerStates.winnerPlayerUuid ?? null
     this.stats.value = playerGameState.stats
 
     if (this.currentTarget.value) {

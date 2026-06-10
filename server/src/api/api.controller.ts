@@ -122,6 +122,7 @@ export class ApiController {
       let player1Controller = new HumanPlayerController();
 
       gameState.addPlayer(req.user, await this.playerStateFactory.createPlayerState(req.user, game.gameId), player1Controller);
+      gameState.startBullingOff();
 
       await this.dartsGameService.setGameState(game.gameId, gameState);
     }
@@ -156,7 +157,7 @@ export class ApiController {
 
       gameState.addPlayer(req.user, await this.playerStateFactory.createMultiPlayerStateFromConfig(req.user, game.gameId, body.settings, 0), player1Controller);
       gameState.addPlayer(player2User, await this.playerStateFactory.createMultiPlayerStateFromConfig(player2User, game.gameId, body.settings, 1), player2Controller);
-      gameState.setRandomTurn();
+      gameState.startBullingOff();
       
       await this.dartsGameService.setGameState(game.gameId, gameState);
     }
