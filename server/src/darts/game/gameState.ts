@@ -224,11 +224,38 @@ export class GameState extends JsonSerializable {
     }
 
     const distances = new Map<string, number>();
+    const bullFields = new Map<string, 'outer-bull' | 'bullseye'>();
     for (const [uuid, ps] of this.playerStates) {
       if (ps.bullingOffThrow) {
-        const { x, y } = ps.bullingOffThrow;
+        const { x, y, field } = ps.bullingOffThrow;
         distances.set(uuid, Math.sqrt(x * x + y * y));
+
+        if (field === 'outer-bull' || field === 'bullseye') {
+          bullFields.set(uuid, field);
+        }
       }
+    }
+
+    // Repeat only when both players hit the same bull ring.
+    const shouldRepeatOnDoubleBullHit =
+      this.playerStates.size === 2 &&
+      bullFields.size === 2 &&
+      Array.from(bullFields.values())[0] === Array.from(bullFields.values())[1];
+
+    if (shouldRepeatOnDoubleBullHit) {
+      for (const [, ps] of this.playerStates) {
+        ps.bullingOffThrow = null;
+        ps.state = PlayerActionState.IDLE;
+      }
+
+      const playerUuids = Array.from(this.playerStates.keys());
+      const firstUuid = playerUuids[Math.floor(Math.random() * playerUuids.length)]!;
+      this.setBullingOffTurn(firstUuid);
+      return;
+    }
+
+    if (distances.size === 0) {
+      return;
     }
 
     const minDist = Math.min(...distances.values());

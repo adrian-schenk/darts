@@ -9,11 +9,11 @@
       Tie! Both players throw again.
     </div>
 
-    <div class="flex gap-6 w-full justify-center flex-wrap">
+    <div class="flex gap-6 w-full justify-around flex-wrap">
       <div
         v-for="[uuid, player] in players"
         :key="uuid"
-        class="flex flex-col items-center gap-3 flex-1 min-w-56 max-w-md"
+        class="flex flex-col items-center gap-3 flex-1 min-w-56"
       >
         <div class="text-center">
           <p
@@ -21,19 +21,22 @@
             :class="uuid === currentPlayer ? 'text-green-400' : 'text-gray-300'"
           >
             {{ player.playerName }}
-            <span v-if="uuid === currentPlayer && !playerStates[uuid]?.bullingOffThrow" class="text-sm text-green-500 ml-1">← throwing</span>
+            <span v-if="uuid === currentPlayer && !playerStates[uuid]?.bullingOffThrow">to throw</span>
           </p>
           <p v-if="playerStates[uuid]?.bullingOffThrow" class="text-sm font-medium text-white mt-1">
             {{ getFieldName(playerStates[uuid].bullingOffThrow.field) }}
+            ({{ getFieldDistanceToBull(playerStates[uuid].bullingOffThrow.x, playerStates[uuid].bullingOffThrow.y).toFixed(1) }}mm)
           </p>
           <p v-else-if="uuid === currentPlayer" class="text-sm text-gray-400 mt-1">Throwing...</p>
           <p v-else class="text-sm text-gray-500 mt-1">Waiting...</p>
         </div>
 
         <Dartboard
+          class="w-full"
           :ref="(el) => setBoardRef(uuid, el as InstanceType<typeof Dartboard>)"
-          :click-to-add-marker="true"
+          :click-to-add-marker="isInteractive(uuid)"
           :show-score="isInteractive(uuid)"
+          :uuid="uuid"
         />
       </div>
     </div>
@@ -80,6 +83,10 @@ const getFieldName = (field: string): string => {
   if (type === 'double') return `Double ${num}`
   if (type === 'triple') return `Triple ${num}`
   return field
+}
+
+const getFieldDistanceToBull = (x: number, y: number): number => {
+  return Math.sqrt(x * x + y * y)
 }
 
 const addMarkerForPlayer = (uuid: string) => {

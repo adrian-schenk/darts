@@ -62,8 +62,6 @@ import { useTrainingStore } from '@/stores/training/TrainingStore'
 import { onMounted, ref } from 'vue'
 import { RouterView } from 'vue-router'
 
-const trainingStore = useTrainingStore()
-
 let { socket, status, data, send, close } = useSocket()
 
 const props = defineProps<{ gameId?: string }>()

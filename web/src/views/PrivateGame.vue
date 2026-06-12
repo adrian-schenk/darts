@@ -75,7 +75,7 @@ const playerRefs = ref<Map<string, InstanceType<typeof Player> | null>>(new Map(
 const dartboardRef = ref<InstanceType<typeof Dartboard> | null>(null)
 const playerRefSetters = new Map<string, (el: unknown) => void>()
 
-const selectedMode = ref<SelectedMode | null>(null)
+const selectedMode = ref<any | null>(null)
 const selectedModeSettings = ref<ModeSettings>({})
 const isStarting = ref(false)
 

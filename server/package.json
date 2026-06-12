@@ -78,7 +78,8 @@
   },
   "jest": {
     "moduleNameMapper": {
-      "^src/(.*)$": "<rootDir>/src/$1"
+      "^src/(.*)$": "<rootDir>/$1",
+      "^uuid$": "<rootDir>/../test/mocks/uuid.ts"
     },
     "moduleFileExtensions": [
       "js",
