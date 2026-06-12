@@ -1,0 +1,43 @@
+name: Build Server
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build frontend
+        working-directory: web
+        run: |
+          npm ci
+          npm run build
+
+      - name: Copy frontend assets
+        run: |
+          mkdir -p server/public
+          cp -r web/dist/* server/public/
+
+      - name: Build NestJS
+        working-directory: server
+        run: |
+          npm ci
+          npm run build
+
+      - name: Upload bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: nest-server
+          path: |
+            server/dist
+            server/public
+            server/package.json
+            server/package-lock.json
