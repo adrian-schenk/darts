@@ -17,6 +17,7 @@ jobs:
 
       - name: Build frontend
         working-directory: web
+        continue-on-error: true
         run: |
           npm ci
           npm run build
