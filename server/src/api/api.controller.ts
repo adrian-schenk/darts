@@ -138,8 +138,10 @@ export class ApiController {
       throw new HttpException('Unauthorized: Socket ID is missing or does not match the authenticated user', HttpStatus.BAD_REQUEST);
     }
 
+    const player2User = body.settings.opponent.type === 'bot' ? BotUser : req.user;
+
     const game: GameEntity = await this.dartsGameService.createDartGame(
-      req.user,
+      [req.user.id, player2User.id],
       body.mode ?? 'standard',
     );
     
@@ -152,8 +154,6 @@ export class ApiController {
 
       let player1Controller = new HumanPlayerController();
       let player2Controller = body.settings.opponent.type === 'bot' ? new BotPlayerController(body.settings.opponent.difficulty ?? BotDifficulty.auto) : new HumanPlayerController();
-
-      let player2User = body.settings.opponent.type === 'bot' ? BotUser : req.user;
 
       gameState.addPlayer(req.user, await this.playerStateFactory.createMultiPlayerStateFromConfig(req.user, game.gameId, body.settings, 0), player1Controller);
       gameState.addPlayer(player2User, await this.playerStateFactory.createMultiPlayerStateFromConfig(player2User, game.gameId, body.settings, 1), player2Controller);
@@ -231,5 +231,15 @@ export class ApiController {
         playerCount: res.tournament?.playerIds?.length,
       },
     };
+  }
+
+  @Post('/tournaments/:uuid/leave')
+  async leaveTournament(@Param('uuid') uuid: string, @Req() req) {
+    const res = await this.tournamentService.leaveTournament(uuid, req.user);
+    if (!res.ok) {
+      throw new HttpException(res.message, HttpStatus.BAD_REQUEST);
+    }
+
+    return { success: true, message: res.message };
   }
 }

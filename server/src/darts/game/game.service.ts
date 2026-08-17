@@ -14,10 +14,10 @@ import GameStateFactory from './gameFactory';
 import { GameState } from './gameState';
 import PlayerStateFactory from './stateFactory';
 import { BotPlayerController } from './controllers/botPlayer.controller';
-import { randomBytes } from 'crypto';
 import { createGameEndHandler } from './gameEndHandler';
 import TournamentService from '../tournament/tournament.service';
 import PlayerState from './playerState';
+import { GameResultService } from '../game-result/game-result.service';
 
 @Injectable()
 export default class DartsGameService {
@@ -34,6 +34,7 @@ export default class DartsGameService {
     private userService: UsersService,
     @Inject(forwardRef(() => TournamentService))
     private tournamentService: TournamentService,
+    private readonly gameResultService: GameResultService,
   ) { }
 
   async setGameState(gameId: string, state: GameState) {
@@ -50,20 +51,17 @@ export default class DartsGameService {
         onGameFinished: async ({ gameState, winnerPlayerUuid }: { gameState: GameState; winnerPlayerUuid: string }) => {
           const winnerUserId =
             gameState.playerStates.get(winnerPlayerUuid)?.userId ?? null;
+          await this.gameResultService.recordFinishedGame({ gameState, winnerPlayerUuid, isRanked: false });
           await this.tournamentService.onTournamentGameFinishedByGameId(
             game.tournamentUuid!,
             gameId,
             winnerUserId,
           );
-          await this.gameModel.updateOne(
-            { gameId },
-            { $set: { status: 'finished', updatedAt: new Date() } },
-          );
         },
       };
     }
 
-    return createGameEndHandler(game?.mode ?? '');
+    return createGameEndHandler(this.gameResultService);
   }
 
   async getGameState(gameId: string): Promise<GameState | null> {
@@ -89,7 +87,7 @@ export default class DartsGameService {
       .exec();
     if (!res) {
       const createdGame = new this.gameModel({
-        playerIds: [],
+        playerIds: [user.id],
         mode,
         status: 'open',
         owner: String(user.id),
@@ -101,12 +99,15 @@ export default class DartsGameService {
   }
 
   async createDartGame(
-    players: string[] | { [key: string]: string[] },
+    players: number[],
     mode: string,
     status: string = 'open',
   ) {
-
-    const createdGame = new this.gameModel({ mode: mode });
+    const createdGame = new this.gameModel({
+      mode,
+      playerIds: players,
+      status,
+    });
     let res = await createdGame.save();
 
     return res;
@@ -132,14 +133,24 @@ export default class DartsGameService {
       isRanked: String(config.mode).endsWith('/ranked'),
     };
 
-    for (const [user, controllerType] of users) {
-      let playerState = await this.playerStateFactory.createPlayerState(user, res.gameId);
+    for (let i = 0; i < users.length; i++) {
+      const [user, controllerType] = users[i];
+      let playerState = await this.playerStateFactory.createMultiPlayerStateFromConfig(
+        user,
+        res.gameId,
+        config,
+        i as 0 | 1,
+      );
 
       if (controllerType == 'bot') {
-        playerState.playername = String(randomBytes(4).toString('hex'));
+        playerState.playername = 'Bot';
       }
 
-      gameState.addPlayer(user, playerState, controllerType != 'bot' ? new HumanPlayerController() : new BotPlayerController());
+      gameState.addPlayer(
+        user,
+        playerState,
+        controllerType != 'bot' ? new HumanPlayerController() : new BotPlayerController(),
+      );
     }
 
     gameState.startBullingOff();

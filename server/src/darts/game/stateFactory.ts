@@ -50,17 +50,40 @@ export default class PlayerStateFactory {
 
   async createMultiPlayerStateFromConfig(user: User, gameId: string, config: any, player: 0 | 1,): Promise<PlayerState> {
     let playerState: PlayerState = await this.createPlayerState(user, gameId);
-    
-    playerState.playername = config.opponent?.type == 'bot' ? 'Bot' : config.gameConfig?.players?.[player]?.name || `Player ${player + 1}`;
+
+    const playerConfig = config.gameConfig?.players?.[player];
+    const startingScore =
+      playerConfig?.startingScore ?? config.gameConfig?.startingScore ?? 501;
+    const checkoutMode =
+      playerConfig?.checkoutMode ?? config.gameConfig?.checkoutMode ?? 'double-out';
+    const startMode =
+      playerConfig?.startMode ?? config.gameConfig?.startMode ?? 'straight-in';
+
+    playerState.playername = this.resolvePlayername(user, config, player);
 
     if (playerState instanceof DefaultPlayerState && !(playerState instanceof CheckoutPlayerState)) {
-      (playerState as DefaultPlayerState).setInitialScore(config.gameConfig?.players?.[player]?.startingScore || 501);
-      (playerState as DefaultPlayerState).checkoutMode = config.gameConfig?.players?.[player]?.checkoutMode || 'double-out';
-      (playerState as DefaultPlayerState).startMode = config.gameConfig?.players?.[player]?.startMode || 'straight-in';
+      (playerState as DefaultPlayerState).setInitialScore(startingScore);
+      (playerState as DefaultPlayerState).checkoutMode = checkoutMode;
+      (playerState as DefaultPlayerState).startMode = startMode;
     }
 
     playerState.setShowPlayerStat('showName', true);
 
     return playerState;
+  }
+
+  private resolvePlayername(user: User, config: any, player: 0 | 1): string {
+    const explicitName = config.gameConfig?.players?.[player]?.name;
+    if (explicitName) return explicitName;
+
+    const opponentType = config.opponent?.type;
+    if (opponentType === 'bot') {
+      return player === 1 ? 'Bot' : user.username;
+    }
+    if (opponentType === 'local') {
+      return `Player ${player + 1}`;
+    }
+
+    return user.username;
   }
 }

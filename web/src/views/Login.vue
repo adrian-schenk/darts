@@ -54,6 +54,23 @@
             </a>
           </div>
 
+          <!-- 2FA Code (shown when required) -->
+          <div v-if="twoFactorRequired">
+            <label for="twoFactorCode" class="block text-sm font-medium text-slate-300 mb-2">
+              Two-Factor Code
+            </label>
+            <input
+              type="text"
+              id="twoFactorCode"
+              v-model="form.twoFactorCode"
+              placeholder="6-digit code"
+              maxlength="6"
+              class="w-full px-4 py-3 rounded-lg bg-slate-800/50 border border-slate-700 text-white text-center font-mono text-lg placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            />
+          </div>
+
+          <p v-if="loginError" class="text-sm text-red-400 mt-4">{{ loginError }}</p>
+
           <!-- Login Button -->
           <button
             type="submit"
@@ -92,36 +109,48 @@ const form = ref({
   username: '',
   password: '',
   rememberMe: false,
+  twoFactorCode: '',
 })
 
-const handleLogin = () => {
-  fetch(
-    `/auth/login`,
-    {
+const twoFactorRequired = ref(false)
+const loginError = ref('')
+
+const handleLogin = async () => {
+  loginError.value = ''
+  try {
+    const response = await fetch(`/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(form.value),
-    },
-  )
-    .then((res) => {
-      if (!res.ok) {
-        throw new Error('Login failed')
-      }
+      body: JSON.stringify({
+        username: form.value.username,
+        password: form.value.password,
+        twoFactorCode: form.value.twoFactorCode || undefined,
+      }),
+    })
 
-      return res.json()
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}))
+      const requires2fa = data?.twoFactorRequired || data?.message?.twoFactorRequired
+      if (requires2fa) {
+        twoFactorRequired.value = true
+        loginError.value = 'Enter the code from your authenticator app.'
+        return
+      }
+      throw new Error(data?.message || 'Login failed')
+    }
+
+    const token = await response.json()
+    Cookies.set('auth_token', token.access_token, {
+      expires: form.value.rememberMe ? 7 : undefined,
+      secure: true,
+      sameSite: 'strict',
     })
-    .then((token) => {
-      Cookies.set('auth_token', token.access_token, {
-        expires: form.value.rememberMe ? 7 : undefined,
-        secure: true,
-        sameSite: 'strict',
-      })
-      window.location.href = '/'
-    })
-    .catch((error) => {
-      console.error('Login failed:', error)
-    })
+    window.location.href = '/'
+  } catch (error) {
+    console.error('Login failed:', error)
+    loginError.value = error instanceof Error ? error.message : 'Login failed'
+  }
 }
 </script>

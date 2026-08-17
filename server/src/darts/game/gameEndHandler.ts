@@ -1,3 +1,4 @@
+import { GameResultService } from '../game-result/game-result.service';
 import { GameState } from './gameState';
 
 export interface GameResultContext {
@@ -10,19 +11,16 @@ export interface GameEndHandler {
   onGameFinished(context: GameResultContext): Promise<void>;
 }
 
-export class NoopGameEndHandler implements GameEndHandler {
-  async onGameFinished(_: GameResultContext): Promise<void> {}
-}
+export class PersistentGameEndHandler implements GameEndHandler {
+  constructor(private readonly gameResultService: GameResultService) {}
 
-export class RankedGameEndHandler implements GameEndHandler {
-  async onGameFinished(_: GameResultContext): Promise<void> {
-    // Intentionally left blank for now. Ranked ELO updates can be plugged in here.
+  async onGameFinished(context: GameResultContext): Promise<void> {
+    await this.gameResultService.recordFinishedGame(context);
   }
 }
 
-export function createGameEndHandler(mode: string): GameEndHandler {
-  if (mode.endsWith('/ranked')) {
-    return new RankedGameEndHandler();
-  }
-  return new NoopGameEndHandler();
+export function createGameEndHandler(
+  gameResultService: GameResultService,
+): GameEndHandler {
+  return new PersistentGameEndHandler(gameResultService);
 }

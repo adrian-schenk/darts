@@ -12,12 +12,14 @@ import { User, UsersService } from '../users/users.service';
 import { Token } from './token.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { TotpService } from './totp.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
+    private readonly totpService: TotpService,
     @InjectRepository(Token)
     private readonly tokenRepository: Repository<Token>,
   ) {}
@@ -61,6 +63,18 @@ export class AuthService {
       throw new UnauthorizedException('invalid credentials');
     }
 
+    if (user.twoFactorEnabled) {
+      if (!loginDto.twoFactorCode) {
+        throw new UnauthorizedException({
+          message: 'two-factor code required',
+          twoFactorRequired: true,
+        });
+      }
+      if (!user.twoFactorSecret || !this.totpService.verify(user.twoFactorSecret, loginDto.twoFactorCode)) {
+        throw new UnauthorizedException('invalid two-factor code');
+      }
+    }
+
     const tokenString = randomBytes(32).toString('hex');
     const token = this.tokenRepository.create({
       userId: user.id,
@@ -72,7 +86,14 @@ export class AuthService {
 
   async getProfile(
     userId: string,
-  ): Promise<{ id: string; username: string; email: string }> {
+  ): Promise<{
+    id: string;
+    username: string;
+    email: string;
+    elo: number;
+    profilePicture: string | null;
+    twoFactorEnabled: boolean;
+  }> {
     const user = await this.usersService.findById(Number(userId));
     if (!user) {
       throw new UnauthorizedException('user not found');
@@ -81,6 +102,9 @@ export class AuthService {
       id: user.id.toString(),
       username: user.username,
       email: user.email,
+      elo: user.elo,
+      profilePicture: user.profilePicture,
+      twoFactorEnabled: user.twoFactorEnabled,
     };
   }
 

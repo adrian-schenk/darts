@@ -23,17 +23,25 @@ describe('AuthService', () => {
     save: jest.fn(),
   } as any;
 
+  const totpService = {
+    verify: jest.fn(),
+  } as any;
+
   const baseUser = {
     id: 42,
     uuid: 'user-uuid',
     username: 'alice',
     email: 'alice@example.com',
     password: AuthService.hashPassword('secret'),
+    elo: 1000,
+    profilePicture: null,
+    twoFactorEnabled: false,
+    twoFactorSecret: null,
   } as User;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new AuthService(usersService, jwtService, tokenRepository);
+    service = new AuthService(usersService, jwtService, totpService, tokenRepository);
   });
 
   describe('register', () => {
@@ -139,6 +147,9 @@ describe('AuthService', () => {
         id: '42',
         username: 'alice',
         email: 'alice@example.com',
+        elo: 1000,
+        profilePicture: null,
+        twoFactorEnabled: false,
       });
     });
 

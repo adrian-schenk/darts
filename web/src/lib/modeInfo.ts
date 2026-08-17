@@ -31,8 +31,6 @@ export const regularModes: GameMode[] = [
       gameConfig: {
         startingScore: 501,
         checkoutMode: 'double-out',
-        legs: 3,
-        sets: 2
       },
       opponent: 'local',
     },

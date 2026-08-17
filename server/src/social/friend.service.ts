@@ -43,7 +43,7 @@ export default class FriendService {
     await this.friendRequestRepository.save(request);
   }
 
-  async getFriends(user: User): Promise<object[]> {
+  async getFriends(user: User): Promise<Array<{ id: number; uuid: string; username: string }>> {
     const requests = await this.friendRequestRepository.find({
       where: [
         { sender: { id: user.id }, status: 'accepted' },

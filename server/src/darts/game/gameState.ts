@@ -168,40 +168,30 @@ export class GameState extends JsonSerializable {
   }
 
   private setBullingOffTurn(playerUuid: string) {
-    this.switchTurn();
+    this.currentPlayer = playerUuid;
+    for (const playerState of this.playerStates.values()) {
+      playerState.state = PlayerActionState.IDLE;
+    }
+    this.controllers.get(playerUuid)?.planBullingOffTurn?.(this);
   }
 
   private async handleBullingOffEvent(event: string, user: User, payload: any) {
-    const currentPlayerState = this.playerStates.get(this.currentPlayer);
-    if (!currentPlayerState) return;
+    if (event !== 'dart_hit') return;
 
-    if (event === 'dart_hit') {
-      if (currentPlayerState.bullingOffThrow !== null) return;
+    const throwingPlayerUuid = this.currentPlayer;
+    const currentPlayerState = this.playerStates.get(throwingPlayerUuid);
+    if (!currentPlayerState || currentPlayerState.bullingOffThrow !== null) return;
 
-      const throwInfo = payload.throw;
-      currentPlayerState.bullingOffThrow = {
-        field: throwInfo.field,
-        x: throwInfo.x,
-        y: throwInfo.y,
-      };
-      currentPlayerState.state = PlayerActionState.REMOVE_DARTS;
-
-    } else if (event === 'dart_remove') {
-      const allUuids = Array.from(this.playerStates.keys());
-      const nextUuid = allUuids.find(
-        (uuid) => uuid !== this.currentPlayer && this.playerStates.get(uuid)?.bullingOffThrow === null,
-      );
-
-      if (nextUuid) {
-        this.setBullingOffTurn(nextUuid);
-      } else {
-        this.evaluateBullingOff();
-      }
-    }
+    const throwInfo = payload.throw;
+    currentPlayerState.bullingOffThrow = {
+      field: throwInfo.field,
+      x: throwInfo.x,
+      y: throwInfo.y,
+    };
 
     this.providers.dartEventModel.create({
       gameId: this.gameId,
-      playerUuid: payload.playerUuid ?? 'bot',
+      playerUuid: throwingPlayerUuid,
       user: user.id,
       type: event,
       payload: { ...payload, bullingOff: true },
@@ -209,12 +199,26 @@ export class GameState extends JsonSerializable {
       updatedAt: new Date(),
     });
 
+    this.advanceBullingOff();
 
-    payload.playerUuid = this.currentPlayer;
+    payload.playerUuid = throwingPlayerUuid;
     await this.providers.gameService.setGameState(this.gameId, this);
     this.providers.gameService.broadcast(this.gameId, 'game-event', this.state);
     this.providers.gameService.broadcast(this.gameId, 'dart-event', payload);
     this.providers.gameService.broadcast(this.gameId, 'player-event', this.currentPlayer, this.getPlayerStatesJSON());
+  }
+
+  private advanceBullingOff() {
+    const nextUuid = Array.from(this.playerStates.keys()).find(
+      (uuid) => this.playerStates.get(uuid)?.bullingOffThrow === null,
+    );
+
+    if (nextUuid !== undefined) {
+      this.setBullingOffTurn(nextUuid);
+      return;
+    }
+
+    this.evaluateBullingOff();
   }
 
   private evaluateBullingOff() {
@@ -556,11 +560,11 @@ export class GameState extends JsonSerializable {
   }
 
   private getLegsPerSet(): number {
-    return Number(this.config?.gameConfig?.legs ?? 3);
+    return Math.max(1, Number(this.config?.gameConfig?.legs ?? 1));
   }
 
   private getSetsNeededToWin(): number {
-    return 4;
+    return Math.max(1, Number(this.config?.gameConfig?.sets ?? 1));
   }
 
   private hasPlayerWonGame(playerUuid: string): boolean {

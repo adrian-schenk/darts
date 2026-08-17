@@ -1,5 +1,7 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { User } from 'src/users/user.entity';
 import { GameEntity, GameEntitySchema } from './game/entities/game.entity';
 import DartsService from './darts.service';
 import DartsGameService from './game/game.service';
@@ -20,11 +22,13 @@ import {
   TournamentEntitySchema,
 } from './tournament/tournament.entity';
 import TournamentService from './tournament/tournament.service';
+import { GameResultService } from './game-result/game-result.service';
 
 @Module({
   imports: [
     forwardRef(() => WsModule),
     forwardRef(() => UsersModule),
+    TypeOrmModule.forFeature([User]),
     MongooseModule.forFeature([
       { name: GameEntity.name, schema: GameEntitySchema },
       { name: DartEventEntity.name, schema: DartEventEntitySchema },
@@ -40,6 +44,7 @@ import TournamentService from './tournament/tournament.service';
     PlayerStateFactory,
     GameStateFactory,
     TournamentService,
+    GameResultService,
   ],
   exports: [
     DartsService,
@@ -50,6 +55,7 @@ import TournamentService from './tournament/tournament.service';
     PlayerStateFactory,
     GameStateFactory,
     TournamentService,
+    GameResultService,
   ],
   controllers: [
     MatchmakingController

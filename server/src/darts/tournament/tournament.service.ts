@@ -119,7 +119,14 @@ export default class TournamentService implements OnModuleInit {
       .sort({ createdAt: -1 })
       .exec();
 
-    return tournaments.map((t) => this.toSummary(t));
+    return tournaments
+      .filter(
+        (t) =>
+          !t.isPrivate ||
+          t.ownerId === String(userId) ||
+          t.playerIds.includes(userId),
+      )
+      .map((t) => this.toSummary(t));
   }
 
   async getTournamentByUuid(uuid: string) {
@@ -193,6 +200,27 @@ export default class TournamentService implements OnModuleInit {
     }
 
     return { ok: true, message: 'Joined tournament', tournament };
+  }
+
+  async leaveTournament(uuid: string, user: User) {
+    const tournament = await this.getTournamentByUuid(uuid);
+    if (!tournament) {
+      return { ok: false, message: 'Tournament not found' };
+    }
+
+    if (tournament.status !== 'open') {
+      return { ok: false, message: 'Tournament already started' };
+    }
+
+    if (!tournament.playerIds.includes(user.id)) {
+      return { ok: false, message: 'You are not part of this tournament' };
+    }
+
+    tournament.playerIds = tournament.playerIds.filter((id) => id !== user.id);
+    tournament.updatedAt = new Date();
+    await tournament.save();
+
+    return { ok: true, message: 'Left tournament', tournament };
   }
 
   async startTournament(uuid: string) {
@@ -475,22 +503,9 @@ export default class TournamentService implements OnModuleInit {
     gameState.addPlayer(leftPlayer, p1, new HumanPlayerController());
     gameState.addPlayer(rightPlayer, p2, new HumanPlayerController());
 
-    gameState.providers.gameEndHandler = {
-      onGameFinished: async ({ gameState: finishedGameState, winnerPlayerUuid }: { gameState: GameState; winnerPlayerUuid: string }) => {
-        const winnerUserId = finishedGameState.playerStates.get(winnerPlayerUuid)?.userId ?? null;
-        await this.onTournamentGameFinishedByGameId(
-          tournament.uuid,
-          game.gameId,
-          winnerUserId,
-        );
-        await this.gameModel.updateOne(
-          { gameId: game.gameId },
-          { $set: { status: 'finished', updatedAt: new Date() } },
-        );
-      },
-    };
+    gameState.providers.gameEndHandler =
+      await this.dartsGameService.resolveGameEndHandler(game.gameId);
 
-    //gameState.setRandomTurn();
     await this.dartsGameService.setGameState(game.gameId, gameState);
 
     this.connectionsService.broadcastToUsers(

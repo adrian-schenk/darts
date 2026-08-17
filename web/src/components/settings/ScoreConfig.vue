@@ -14,19 +14,28 @@ const presetValues = computed<number[]>(() => {
 const scoringDetails = {
   301: { name: '301', description: 'Players start with 301 points and the first to reach exactly 0 wins.' },
   501: { name: '501', description: 'Players start with 501 points and the first to reach exactly 0 wins.' },
-}
+} as const
 
 const startDetails = {
   'straight-in': { name: 'Straight-In', description: 'Players can start scoring with any dart.' },
   'double-in': { name: 'Double-In', description: 'Players must hit a double area to start scoring.' },
   'master-in': { name: 'Master-In', description: 'Players must hit a double, triple or the bullseye to start scoring.' }
-}
+} as const
 
 const checkoutDetails = {
   'open': { name: 'Straight-Out', description: 'Any combination of darts can be used to checkout.' },
   'double-out': { name: 'Double-Out', description: 'The final dart must land in a double area to checkout.' },
   'master-out': { name: 'Master-Out', description: 'The final dart must land in a double, triple or the bullseye to checkout.' }
-}
+} as const
+
+const getScoringDetail = (score: number) =>
+  scoringDetails[score as 301 | 501] ?? { name: String(score), description: '' }
+
+const getStartDetail = (start: string) =>
+  startDetails[start as keyof typeof startDetails] ?? { name: start, description: '' }
+
+const getCheckoutDetail = (checkout: string) =>
+  checkoutDetails[checkout as keyof typeof checkoutDetails] ?? { name: checkout, description: '' }
 const checkouts = computed<string[]>(() => {
   return (props.context?.node?.props?.checkouts) ?? ['open', 'double-out', 'master-out']
 })
@@ -39,6 +48,7 @@ type PlayerConfig = {
   name: string
   startingScore: number
   checkoutMode: string
+  startMode: string
 }
 
 const opponent = useFormKitValue('opponent', props.context?.node);
@@ -51,8 +61,8 @@ const sets = ref<number>(2)
 const legs = ref<number>(3)
 
 const players = ref<PlayerConfig[]>([
-  { name: 'Player 1', startingScore: 501, checkoutMode: 'double-out' },
-  { name: 'Player 2', startingScore: 501, checkoutMode: 'double-out' },
+  { name: 'Player 1', startingScore: 501, checkoutMode: 'double-out', startMode: 'straight-in' },
+  { name: 'Player 2', startingScore: 501, checkoutMode: 'double-out', startMode: 'straight-in' },
 ])
 
 const setNodeValue = (value: Record<string, unknown>) => {
@@ -108,7 +118,7 @@ watch(legs, (val) => patchNodeValue({ legs: val }))
             : 'border-blue-600 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-500/50'
         ]" @click="() => { selectScorePreset(preset) }" type="button">
           <div class="text-xl font-bold text-white mb-2 relative">{{ preset }}</div>
-          <div class="text-gray-400 relative text-sm mb-4 min-h-10">{{ scoringDetails[preset].description }}</div>
+          <div class="text-gray-400 relative text-sm mb-4 min-h-10">{{ getScoringDetail(preset).description }}</div>
         </button>
         <button v-if="showCustomOption" @click="() => { selectCustomScore() }" type="button" :class="[
           'relative bg-gradient-to-br from-slate-800 to-slate-900 border-2 rounded-lg p-6 transition-all duration-300 text-left',
@@ -132,8 +142,8 @@ watch(legs, (val) => patchNodeValue({ legs: val }))
             ? 'border-cyan-300 shadow-lg shadow-cyan-500/40'
             : 'border-blue-600 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-500/50'
         ]" @click="() => { selectStart(start) }" type="button">
-          <div class="text-xl font-bold text-white mb-2 relative">{{ startDetails[start].name }}</div>
-          <div class="text-gray-400 relative text-sm mb-4 min-h-10">{{ startDetails[start].description }}</div>
+          <div class="text-xl font-bold text-white mb-2 relative">{{ getStartDetail(start).name }}</div>
+          <div class="text-gray-400 relative text-sm mb-4 min-h-10">{{ getStartDetail(start).description }}</div>
         </button>
       </div>
     </div>
@@ -147,8 +157,8 @@ watch(legs, (val) => patchNodeValue({ legs: val }))
             ? 'border-cyan-300 shadow-lg shadow-cyan-500/40'
             : 'border-blue-600 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-500/50'
         ]" @click="() => { selectCheckout(checkout) }" type="button">
-          <div class="text-xl font-bold text-white mb-2 relative">{{ checkoutDetails[checkout].name }}</div>
-          <div class="text-gray-400 relative text-sm mb-4 min-h-10">{{ checkoutDetails[checkout].description }}</div>
+          <div class="text-xl font-bold text-white mb-2 relative">{{ getCheckoutDetail(checkout).name }}</div>
+          <div class="text-gray-400 relative text-sm mb-4 min-h-10">{{ getCheckoutDetail(checkout).description }}</div>
         </button>
       </div>
     </div>
@@ -175,8 +185,8 @@ watch(legs, (val) => patchNodeValue({ legs: val }))
               ? 'border-cyan-300 shadow-lg shadow-cyan-500/40'
               : 'border-blue-700 hover:border-blue-400'
           ]" @click="player.startMode = start">
-            <div class="text-sm font-bold text-white">{{ startDetails[start].name }}</div>
-            <div class="text-xs text-gray-400 mt-1">{{ startDetails[start].description }}</div>
+            <div class="text-sm font-bold text-white">{{ getStartDetail(start).name }}</div>
+            <div class="text-xs text-gray-400 mt-1">{{ getStartDetail(start).description }}</div>
           </button>
         </div>
 
@@ -188,8 +198,8 @@ watch(legs, (val) => patchNodeValue({ legs: val }))
               ? 'border-cyan-300 shadow-lg shadow-cyan-500/40'
               : 'border-blue-700 hover:border-blue-400'
           ]" @click="player.checkoutMode = checkout">
-            <div class="text-sm font-bold text-white">{{ checkoutDetails[checkout].name }}</div>
-            <div class="text-xs text-gray-400 mt-1">{{ checkoutDetails[checkout].description }}</div>
+            <div class="text-sm font-bold text-white">{{ getCheckoutDetail(checkout).name }}</div>
+            <div class="text-xs text-gray-400 mt-1">{{ getCheckoutDetail(checkout).description }}</div>
           </button>
         </div>
       </div>

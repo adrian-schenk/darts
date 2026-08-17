@@ -33,6 +33,15 @@ export class GameEntity extends Document {
 
   @Prop({ type: String, default: null })
   owner!: string | null;
+
+  @Prop({ type: String, default: null })
+  winnerUserId!: string | null;
+
+  @Prop({ type: Date, default: null })
+  finishedAt!: Date | null;
+
+  @Prop({ type: Object, default: null })
+  result!: Record<string, any> | null;
 }
 
 export const GameEntitySchema = SchemaFactory.createForClass(GameEntity);

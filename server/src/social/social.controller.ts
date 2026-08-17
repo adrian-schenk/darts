@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   NotFoundException,
   Param,
@@ -48,6 +49,8 @@ export class SocialController {
   ) {
     const target = await this.usersService.findByUsername(body.username);
     if (!target) throw new NotFoundException('User not found');
+
+    await this.assertFriendRequestAllowed(req.user, target);
     await this.friendService.sendFriendRequest(req.user, target);
     return { success: true };
   }
@@ -101,6 +104,18 @@ export class SocialController {
   ) {
     const member = await this.usersService.findByUsername(body.username);
     if (!member) throw new NotFoundException('User not found');
+
+    const policy = member.settings?.privacy?.teamRequests ?? 'everyone';
+    if (policy === 'nobody') {
+      throw new ForbiddenException('This user is not accepting team invites');
+    }
+    if (policy === 'friends') {
+      const friends = await this.friendService.getFriends(member);
+      if (!friends.some((friend) => friend.id === req.user.id)) {
+        throw new ForbiddenException('Only friends can add this user to a team');
+      }
+    }
+
     return this.dartGroupService.addMember(id, member, req.user);
   }
 
@@ -132,5 +147,18 @@ export class SocialController {
   ) {
     await this.dartGroupService.deleteGroup(id, req.user);
     return { success: true };
+  }
+
+  private async assertFriendRequestAllowed(requester, target) {
+    const policy = target.settings?.privacy?.friendRequests ?? 'everyone';
+    if (policy === 'nobody') {
+      throw new ForbiddenException('This user is not accepting friend requests');
+    }
+    if (policy === 'friends') {
+      const friends = await this.friendService.getFriends(target);
+      if (!friends.some((friend) => friend.id === requester.id)) {
+        throw new ForbiddenException('Only friends can send this user a friend request');
+      }
+    }
   }
 }

@@ -16,6 +16,7 @@ import { WsModule } from './ws/ws.module';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { SocialModule } from './social/social.module';
 import { StatsModule } from './stats/stats.module';
+import { SettingsModule } from './settings/settings.module';
 
 @Module({
   imports: [
@@ -78,6 +79,7 @@ import { StatsModule } from './stats/stats.module';
     WsModule,
     SocialModule,
     StatsModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -27,7 +27,7 @@ export class MatchmakingController {
 
     const user = req.user
     
-    let { res, msg } = this.matchmakingService.joinQueue(this.matchmakingService.getQueueNameFromConfig(body), user, headers['x-socket-id'])
+    let { res, msg } = this.matchmakingService.joinQueue(this.matchmakingService.getQueueNameFromConfig(body), user, headers['x-socket-id'], body)
     return { success: res, message: msg }
   }
 

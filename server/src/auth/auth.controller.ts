@@ -28,7 +28,14 @@ export class AuthController {
   @Get('me')
   me(
     @Req() request: AuthenticatedRequest,
-  ): Promise<{ id: string; username: string; email: string }> {
+  ): Promise<{
+    id: string;
+    username: string;
+    email: string;
+    elo: number;
+    profilePicture: string | null;
+    twoFactorEnabled: boolean;
+  }> {
     return this.authService.getProfile(request.user.uid);
   }
 }

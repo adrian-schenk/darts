@@ -6,6 +6,7 @@ import { DartEventEntity } from '../darts_event/dart_event.entity';
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import DartsGameService from './game.service';
 import { createGameEndHandler } from './gameEndHandler';
+import { GameResultService } from '../game-result/game-result.service';
 
 @Injectable()
 export default class GameStateFactory {
@@ -13,6 +14,7 @@ export default class GameStateFactory {
     @InjectModel(GameEntity.name) private gameModel: Model<GameEntity>,
     @InjectModel(DartEventEntity.name) private dartEventModel: Model<DartEventEntity>,
     @Inject(forwardRef(() => DartsGameService)) private dartsGameService: DartsGameService,
+    private readonly gameResultService: GameResultService,
   ) {}
 
   async createGameStateFromMode(
@@ -33,7 +35,7 @@ export default class GameStateFactory {
     gameState.providers = {
       dartEventModel: this.dartEventModel,
       gameService: this.dartsGameService,
-      gameEndHandler: createGameEndHandler(game?.mode ?? mode),
+      gameEndHandler: createGameEndHandler(this.gameResultService),
     };
 
     gameState.config = {
